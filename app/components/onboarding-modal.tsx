@@ -8,6 +8,7 @@ import AvatarCustomizer from './avatar-customizer'
 import type { BodyMetrics, AvatarStyle } from './avatar-customizer'
 
 interface UserProfile {
+  primaryGoal: string
   name: string
   allergies: string[]
   restrictions: string[]
@@ -58,10 +59,25 @@ const GOALS = [
   { id: 'hidratarme', label: 'Mejorar hidratación', emoji: '💧' },
 ]
 
-const STEPS = ['¡Hola!', 'Tu Avatar', 'Alergias', 'Dietas', 'Cocina', 'Metas', '¡Listo!']
+const STEPS = ['Tu Objetivo', '¡Hola!', 'Tu Avatar', 'Alergias', 'Dietas', 'Cocina', 'Metas', '¡Listo!']
+
+const PRIMARY_GOALS = [
+  { id: 'bajar-peso', label: 'Bajar de peso', emoji: '⚖️', color: 'from-blue-500 to-indigo-600', desc: 'Reducir grasa corporal de forma saludable' },
+  { id: 'ganar-musculo', label: 'Ganar músculo', emoji: '💪', color: 'from-orange-500 to-red-600', desc: 'Aumentar masa muscular y fuerza' },
+  { id: 'comer-sano', label: 'Aprender a comer sano', emoji: '🌿', color: 'from-green-500 to-emerald-600', desc: 'Mejorar hábitos y alimentación diaria' },
+]
 
 function getSystemPromptAddition(profile: UserProfile): string {
   const parts: string[] = []
+
+  if (profile.primaryGoal) {
+    const goalLabels: Record<string, string> = {
+      'bajar-peso': 'Bajar de peso',
+      'ganar-musculo': 'Ganar músculo',
+      'comer-sano': 'Aprender a comer sano',
+    }
+    parts.push(`🎯 OBJETIVO PRINCIPAL: ${goalLabels[profile.primaryGoal] || profile.primaryGoal}`)
+  }
 
   if (profile.name) {
     parts.push(`El usuario se llama ${profile.name}.`)
@@ -121,6 +137,7 @@ interface OnboardingModalProps {
 export default function OnboardingModal({ onComplete }: OnboardingModalProps) {
   const [step, setStep] = useState(0)
   const [profile, setProfile] = useState<UserProfile>({
+    primaryGoal: '',
     name: '',
     allergies: [],
     restrictions: [],
@@ -190,12 +207,13 @@ export default function OnboardingModal({ onComplete }: OnboardingModalProps) {
 
   const canContinue = () => {
     switch (step) {
-      case 0: return profile.name.trim().length >= 2
-      case 1: return true
+      case 0: return profile.primaryGoal !== ''
+      case 1: return profile.name.trim().length >= 2
       case 2: return true
       case 3: return true
-      case 4: return profile.cookingLevel !== ''
-      case 5: return true
+      case 4: return true
+      case 5: return profile.cookingLevel !== ''
+      case 6: return true
       default: return true
     }
   }
@@ -244,9 +262,41 @@ export default function OnboardingModal({ onComplete }: OnboardingModalProps) {
             </div>
 
             <div className="p-6">
-              {/* Step 0: Name */}
+              {/* Step 0: Primary Objective */}
               {step === 0 && (
                 <motion.div key="step0" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
+                  <div className="text-center mb-6">
+                    <div className="text-4xl mb-3">🎯</div>
+                    <h3 className="text-xl font-bold mb-1">¿Cuál es tu objetivo?</h3>
+                    <p className="text-muted-foreground text-sm">Elige uno — esto personaliza todo tu plan</p>
+                  </div>
+                  <div className="space-y-3 max-w-sm mx-auto">
+                    {PRIMARY_GOALS.map(g => (
+                      <button
+                        key={g.id}
+                        onClick={() => setProfile(prev => ({ ...prev, primaryGoal: g.id }))}
+                        className={`w-full p-4 rounded-2xl text-left transition-all border-2 ${
+                          profile.primaryGoal === g.id
+                            ? `bg-gradient-to-r ${g.color} text-white border-transparent shadow-lg scale-[1.02]`
+                            : 'bg-muted hover:bg-muted/80 border-transparent'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-3xl">{g.emoji}</span>
+                          <div>
+                            <div className={`font-bold text-base ${profile.primaryGoal === g.id ? 'text-white' : ''}`}>{g.label}</div>
+                            <div className={`text-xs ${profile.primaryGoal === g.id ? 'text-white/80' : 'text-muted-foreground'}`}>{g.desc}</div>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Step 1: Name */}
+              {step === 1 && (
+                <motion.div key="step1" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
                   <div className="text-center mb-6">
                     <div className="text-4xl mb-3">👋</div>
                     <h3 className="text-xl font-bold mb-1">¡Bienvenido a NutriGuía!</h3>
@@ -264,9 +314,9 @@ export default function OnboardingModal({ onComplete }: OnboardingModalProps) {
                 </motion.div>
               )}
 
-              {/* Step 1: Avatar + Body */}
-              {step === 1 && (
-                <motion.div key="step1" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
+              {/* Step 2: Avatar + Body */}
+              {step === 2 && (
+                <motion.div key="step2" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
                   <div className="text-center mb-3">
                     <div className="text-4xl mb-2">🧍</div>
                     <h3 className="text-lg font-bold mb-0.5">Genera tu Avatar y Perfil</h3>
@@ -283,9 +333,9 @@ export default function OnboardingModal({ onComplete }: OnboardingModalProps) {
                 </motion.div>
               )}
 
-              {/* Step 2: Allergies */}
-              {step === 2 && (
-                <motion.div key="step2" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
+              {/* Step 3: Allergies */}
+              {step === 3 && (
+                <motion.div key="step3" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
                   <div className="text-center mb-4">
                     <div className="text-4xl mb-3">⚠️</div>
                     <h3 className="text-lg font-bold mb-1">¿Tienes alguna alergia?</h3>
@@ -309,9 +359,9 @@ export default function OnboardingModal({ onComplete }: OnboardingModalProps) {
                 </motion.div>
               )}
 
-              {/* Step 3: Restrictions */}
-              {step === 3 && (
-                <motion.div key="step3" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
+              {/* Step 4: Restrictions */}
+              {step === 4 && (
+                <motion.div key="step4" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
                   <div className="text-center mb-4">
                     <div className="text-4xl mb-3">🌿</div>
                     <h3 className="text-lg font-bold mb-1">¿Sigues alguna dieta?</h3>
@@ -339,9 +389,9 @@ export default function OnboardingModal({ onComplete }: OnboardingModalProps) {
                 </motion.div>
               )}
 
-              {/* Step 4: Cooking level + Budget */}
-              {step === 4 && (
-                <motion.div key="step4" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
+              {/* Step 5: Cooking level + Budget */}
+              {step === 5 && (
+                <motion.div key="step5" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
                   <div className="text-center mb-4">
                     <div className="text-4xl mb-3">👨‍🍳</div>
                     <h3 className="text-lg font-bold mb-1">¿Cómo cocinas?</h3>
@@ -390,9 +440,9 @@ export default function OnboardingModal({ onComplete }: OnboardingModalProps) {
                 </motion.div>
               )}
 
-              {/* Step 5: Goals */}
-              {step === 5 && (
-                <motion.div key="step4" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
+              {/* Step 6: Goals */}
+              {step === 6 && (
+                <motion.div key="step6" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
                   <div className="text-center mb-4">
                     <div className="text-4xl mb-3">🎯</div>
                     <h3 className="text-lg font-bold mb-1">¿Cuáles son tus metas?</h3>
@@ -424,8 +474,8 @@ export default function OnboardingModal({ onComplete }: OnboardingModalProps) {
                 </motion.div>
               )}
 
-              {/* Step 6: Ready */}
-              {step === 6 && (
+              {/* Step 7: Ready */}
+              {step === 7 && (
                 <motion.div key="step6" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
                   <div className="text-center py-4">
                     {/* Avatar full body preview */}
@@ -456,6 +506,13 @@ export default function OnboardingModal({ onComplete }: OnboardingModalProps) {
                     </p>
 
                     <div className="bg-muted/50 rounded-xl p-4 text-left text-xs space-y-1.5">
+                      {profile.primaryGoal && (
+                        <div className="flex items-center gap-2 bg-primary/10 text-primary rounded-lg px-3 py-2 mb-1">
+                          <span>🎯</span>
+                          <span className="font-semibold">Objetivo:</span>
+                          <span>{PRIMARY_GOALS.find(g => g.id === profile.primaryGoal)?.label}</span>
+                        </div>
+                      )}
                       {profile.allergies.length > 0 && (
                         <div><span className="font-semibold">Alergias:</span> {profile.allergies.join(', ')}</div>
                       )}
