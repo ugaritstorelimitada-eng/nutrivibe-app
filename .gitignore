@@ -37,3 +37,4 @@ Thumbs.db
 # Misc
 *.pem
 npm-debug.log
+.vercel
