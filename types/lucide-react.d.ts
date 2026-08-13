@@ -265,6 +265,7 @@ declare module 'lucide-react' {
   export const Thermometer: Icon
   export const ThermometerSun: Icon
   export const ThermometerSnowflake: Icon
+  export const Snowflake: Icon
   export const Umbrella: Icon
   export const Wind: Icon
   export const Droplet: Icon
@@ -303,4 +304,5 @@ declare module 'lucide-react' {
   export const Cookie: Icon
   export const Apple: Icon
   export const Cherry: Icon
+  export const Trophy: Icon
 }
