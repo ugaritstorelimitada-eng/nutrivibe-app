@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Droplets, Scale, TrendingUp, Check } from 'lucide-react'
+import { useStreakStore } from '@/app/store/useStreakStore'
 
 // ─── Water Tracker ────────────────────────────────────────────────────────────
 function WaterTracker() {
@@ -36,7 +37,10 @@ function WaterTracker() {
   }, [glasses])
 
   const addGlass = () => {
-    if (glasses < 16) setGlasses(prev => prev + 1)
+    if (glasses < 16) {
+      setGlasses(prev => prev + 1)
+      useStreakStore.getState().recordActivity('hydration')
+    }
   }
 
   const removeGlass = () => {
@@ -182,6 +186,9 @@ function BMICalculator() {
     localStorage.setItem('nutriguia_bmi', JSON.stringify(data))
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
+
+    // Registrar streak
+    useStreakStore.getState().recordActivity('weight')
   }
 
   const getBMIColor = () => {
@@ -327,6 +334,9 @@ function CalorieEstimator() {
 
     const data = { sex, weight: w, height: h, age: a, activity, calories: result }
     localStorage.setItem('nutriguia_calories', JSON.stringify(data))
+
+    // Registrar streak
+    useStreakStore.getState().recordActivity('weight')
   }
 
   return (
