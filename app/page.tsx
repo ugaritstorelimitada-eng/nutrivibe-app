@@ -10,6 +10,7 @@ import PricingSection from './components/pricing-section'
 import LoginModal from './components/login-modal'
 import SiteHeader from './components/site-header'
 import SiteFooter from './components/site-footer'
+import StreakWidget from './components/streak-widget'
 import { useUserStore } from './store/useUserStore'
 import type { UserProfile } from './components/onboarding-modal'
 import type { User } from './components/login-modal'
@@ -51,13 +52,8 @@ export default function Home() {
     const hasProfile = !!localStorage.getItem('nutriguia_profile')
     const hasSeenOnboarding = !!localStorage.getItem('nutriguia_onboarding_seen')
 
-    // Si no hay usuario logueado, mostrar login
-    if (!savedUser) {
-      setTimeout(() => setShowLogin(true), 300)
-      return
-    }
-
-    // Si hay usuario pero no perfil, mostrar onboarding
+    // Modo invitado: mostrar onboarding para todos (logueados o no)
+    // El login solo se pide cuando el usuario quiere guardar o pagar
     if (!hasProfile && !hasSeenOnboarding && !onboardingDoneRef.current) {
       onboardingDoneRef.current = true
       setTimeout(() => setShowOnboarding(true), 500)
@@ -147,6 +143,13 @@ export default function Home() {
             initialPrompt={chatPrompt}
             onProfileUpdate={handleProfileUpdate}
           />
+        </div>
+      </section>
+
+      {/* Streak widget */}
+      <section className="py-8 bg-card/50">
+        <div className="max-w-5xl mx-auto px-4">
+          <StreakWidget />
         </div>
       </section>
 
