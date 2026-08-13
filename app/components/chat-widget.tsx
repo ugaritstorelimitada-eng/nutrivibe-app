@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { Send, Trash2, Leaf, Loader2, ChevronDown, RefreshCw, AlertCircle, Zap, Crown, Star, Lock, User } from 'lucide-react'
+import { Send, Trash2, Leaf, Loader2, ChevronDown, RefreshCw, AlertCircle, Zap, Crown, Star, Lock, User, Download } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -9,6 +9,7 @@ import { getSystemPromptAddition } from './onboarding-modal'
 import type { UserProfile } from './onboarding-modal'
 import AnimatedAvatar, { type AvatarMood } from './animated-avatar'
 import { useUserStore } from '../store/useUserStore'
+import { useStreakStore } from '../store/useStreakStore'
 
 interface Message {
   id: string
@@ -75,7 +76,6 @@ export default function ChatWidget({ initialPrompt, onProfileUpdate }: ChatWidge
   const [isStreaming, setIsStreaming] = useState(false)
   const [showScrollBtn, setShowScrollBtn] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [apiKeyMissing, setApiKeyMissing] = useState(false)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [avatarMood, setAvatarMood] = useState<AvatarMood>('idle')
 
@@ -153,6 +153,9 @@ export default function ChatWidget({ initialPrompt, onProfileUpdate }: ChatWidge
     // Incrementar contador vía Zustand
     incrementMessageCount()
 
+    // Registrar actividad de streak
+    useStreakStore.getState().recordActivity('chat')
+
     const userMsg: Message = { id: Date.now().toString(), role: 'user', content: trimmed }
     const assistantId = (Date.now() + 1).toString()
 
@@ -166,11 +169,6 @@ export default function ChatWidget({ initialPrompt, onProfileUpdate }: ChatWidge
     setTimeout(() => inputRef.current?.focus(), 0)
 
     try {
-      const apiKey = process.env.NEXT_PUBLIC_ABACUS_API_KEY
-      if (!apiKey) {
-        setApiKeyMissing(true)
-        throw new Error('API key no configurada.')
-      }
 
       const allMessages = [...messagesRef.current, userMsg].map(m => ({
         role: m.role,
@@ -178,7 +176,7 @@ export default function ChatWidget({ initialPrompt, onProfileUpdate }: ChatWidge
       }))
 
       const systemWithProfile = BASE_SYSTEM_PROMPT + getSystemPromptAddition(profile ?? {
-        name: '', allergies: [], restrictions: [], cookingLevel: '', budget: '', goals: [], dailyCalories: null, dailyWater: 2000, createdAt: '',
+        primaryGoal: '', name: '', allergies: [], restrictions: [], cookingLevel: '', budget: '', goals: [], dailyCalories: null, dailyWater: 2000, createdAt: '',
       })
 
       const llmMessages = [
@@ -186,23 +184,20 @@ export default function ChatWidget({ initialPrompt, onProfileUpdate }: ChatWidge
         ...allMessages,
       ]
 
-      const response = await fetch('https://apps.abacus.ai/v1/chat/completions', {
+      // Usar API route como proxy (maneja CORS, rate limiting, y streaming)
+      const response = await fetch('/api/chat', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: 'gpt-5.4-mini',
-          messages: llmMessages,
-          stream: true,
-          max_tokens: 1500,
-          temperature: 0.8,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: allMessages }),
       })
 
       if (!response.ok) {
-        throw new Error(`Error del servicio (${response.status})`)
+        let errMsg = `Error del servicio (${response.status})`
+        try {
+          const errData = await response.json()
+          if (errData?.error) errMsg = errData.error
+        } catch {}
+        throw new Error(errMsg)
       }
 
       const reader = response.body?.getReader()
@@ -223,7 +218,7 @@ export default function ChatWidget({ initialPrompt, onProfileUpdate }: ChatWidge
             if (data === '[DONE]') continue
             try {
               const parsed = JSON.parse(data)
-              const delta = parsed?.choices?.[0]?.delta?.content ?? ''
+              const delta = parsed?.content ?? ''
               if (delta) {
                 setMessages(prev =>
                   prev.map(m => m.id === assistantId ? { ...m, content: m.content + delta } : m)
@@ -266,7 +261,6 @@ export default function ChatWidget({ initialPrompt, onProfileUpdate }: ChatWidge
   const clearChat = () => {
     setMessages([])
     setError(null)
-    setApiKeyMissing(false)
     inputRef.current?.focus()
   }
 
@@ -282,6 +276,74 @@ export default function ChatWidget({ initialPrompt, onProfileUpdate }: ChatWidge
   const lastAssistantMsg = messages.filter(m => m.role === 'assistant').at(-1)
   const showRetry = lastAssistantMsg?.error && !isStreaming
   const planInfo = PLAN_LABELS[plan] ?? PLAN_LABELS.FREE
+
+  // Detectar si el último mensaje contiene un plan semanal
+  const lastContent = lastAssistantMsg?.content ?? ''
+  const hasMealPlan = (lastContent.includes('LUNES') || lastContent.includes('lunes') ||
+    lastContent.includes('Lunes') || lastContent.includes('MIÉRCOLES') ||
+    (lastContent.includes('Desayuno') && lastContent.includes('Almuerzo'))) &&
+    lastContent.length > 200
+
+  const handleDownloadPDF = useCallback(async () => {
+    const { jsPDF } = await import('jspdf')
+    const doc = new jsPDF()
+    const pageWidth = doc.internal.pageSize.getWidth()
+    const margin = 14
+    const today = new Date().toLocaleDateString('es-CL', { year: 'numeric', month: 'long', day: 'numeric' })
+
+    // Header
+    doc.setFillColor(99, 102, 241)
+    doc.rect(0, 0, pageWidth, 38, 'F')
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(20)
+    doc.setFont('helvetica', 'bold')
+    doc.text('Plan Semanal de Alimentación', pageWidth / 2, 16, { align: 'center' })
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'normal')
+    doc.text(`NutriGuía — ${today}`, pageWidth / 2, 26, { align: 'center' })
+    if (profile?.name) doc.text(`Usuario: ${profile.name}`, pageWidth / 2, 33, { align: 'center' })
+
+    let y = 50
+    doc.setTextColor(40, 40, 40)
+    doc.setFontSize(9)
+
+    const lines = lastContent.split('\n').filter(l => l.trim())
+    for (const line of lines) {
+      if (y > 275) { doc.addPage(); y = 20 }
+      const truncated = line.length > 110 ? line.substring(0, 107) + '…' : line
+      const isDay = /^(lunes|martes|miércoles|jueves|viernes|sábado|domingo|lun|mar|mié|jue|vie|sáb|dom)/i.test(truncated)
+      if (isDay) {
+        doc.setFont('helvetica', 'bold')
+        doc.setTextColor(99, 102, 241)
+        y += 2
+      } else {
+        doc.setFont('helvetica', 'normal')
+        doc.setTextColor(60, 60, 60)
+      }
+      const wrapped = doc.splitTextToSize(truncated, pageWidth - margin * 2)
+      for (const w of wrapped) {
+        if (y > 280) { doc.addPage(); y = 15 }
+        doc.text(w, margin, y)
+        y += 5
+      }
+      if (!isDay) y += 1
+    }
+
+    y += 4
+    doc.setDrawColor(220, 220, 240)
+    doc.line(margin, y, pageWidth - margin, y)
+    y += 7
+    doc.setFontSize(8)
+    doc.setTextColor(120, 120, 120)
+    doc.setFont('helvetica', 'italic')
+    doc.text('💧 Mínimo 8 vasos de agua al día', margin, y); y += 5
+    doc.text('⚠️ Plan informativo. Consulta a un nutricionista para planes personalizados.', margin, y); y += 5
+    doc.text(`Generado por NutriGuía — ${today}`, margin, y)
+    doc.setFontSize(7)
+    doc.text('nutriguia.app', pageWidth - margin, 290, { align: 'right' })
+
+    doc.save(`plan-semanal-nutriguia-${Date.now()}.pdf`)
+  }, [lastContent, profile?.name])
   const FREE_DAILY_LIMIT = 5
   const isFreeLimit = plan === 'FREE' && dailyMessageCount >= FREE_DAILY_LIMIT
 
@@ -308,6 +370,15 @@ export default function ChatWidget({ initialPrompt, onProfileUpdate }: ChatWidge
           </div>
         </div>
         <div className="flex items-center gap-1">
+          {hasMealPlan && !isStreaming && (
+            <button
+              onClick={handleDownloadPDF}
+              className="p-2 rounded-lg hover:bg-green-500/30 text-green-300 transition-colors"
+              title="Descargar plan semanal en PDF"
+            >
+              <Download className="w-4 h-4" />
+            </button>
+          )}
           {showRetry && (
             <button onClick={retryLastMessage} className="p-2 rounded-lg hover:bg-white/15 transition-colors flex items-center gap-1.5 text-sm" title="Reintentar">
               <RefreshCw className="w-4 h-4" />
@@ -390,27 +461,9 @@ export default function ChatWidget({ initialPrompt, onProfileUpdate }: ChatWidge
         )}
       </AnimatePresence>
 
-      {/* API Key missing */}
-      <AnimatePresence>
-        {apiKeyMissing && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="bg-amber-50 border-b border-amber-200 px-4 py-3 text-amber-800 text-sm"
-          >
-            <div className="flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-              <div>
-                <strong>API key no configurada.</strong> Agrega <code>NEXT_PUBLIC_ABACUS_API_KEY</code> en tu <code>.env</code>.
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* Error */}
       <AnimatePresence>
-        {error && !apiKeyMissing && (
+        {error && (
           <motion.div
             initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
