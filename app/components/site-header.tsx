@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import type { User as LoginUser } from './login-modal'
 import { useUserStore } from '../store/useUserStore'
 import GoogleSignIn from './google-signin'
+import { signInWithGoogle, isSupabaseConfigured } from '@/lib/supabase/client'
 
 interface SiteHeaderProps {
   user?: LoginUser | null
@@ -45,7 +46,18 @@ function LoginDropdown({ onClose }: { onClose: () => void }) {
       ) : (
         <div className="p-1">
           <button
-            onClick={() => setShowGoogle(true)}
+            onClick={async () => {
+              if (isSupabaseConfigured) {
+                try {
+                  await signInWithGoogle()
+                } catch (err) {
+                  console.error('Supabase sign in error:', err)
+                  setShowGoogle(true)
+                }
+              } else {
+                setShowGoogle(true)
+              }
+            }}
             className="w-full flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-gray-50 rounded-lg transition-colors"
           >
             <div className="w-8 h-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center shadow-sm">

@@ -14,8 +14,12 @@ import StreakWidget from './components/streak-widget'
 import { useUserStore } from './store/useUserStore'
 import type { UserProfile } from './components/onboarding-modal'
 import type { User } from './components/login-modal'
+import { useSupabaseSync } from '@/lib/supabase/useSupabaseSync'
 
 export default function Home() {
+  // Sincronizar con Supabase cuando está configurado (no-op si no hay cuenta)
+  useSupabaseSync()
+
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [showLogin, setShowLogin] = useState(false)
   const [chatPrompt, setChatPrompt] = useState<string | undefined>()
