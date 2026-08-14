@@ -87,15 +87,15 @@ function AvatarDisplaySVG({ metrics, style, isRotating, rotation }: {
 
       {/* Gender indicator badge */}
       <div
-        className="absolute bottom-12 left-1/2 -translate-x-1/2 text-xs font-bold px-2 py-1 rounded-full"
+        className="absolute bottom-14 left-1/2 -translate-x-1/2 text-xs font-bold px-3 py-1.5 rounded-full shadow-xl z-30"
         style={{
-          background: `${style.topColor}20`,
-          color: style.topColor,
-          border: `1px solid ${style.topColor}40`,
+          background: metrics.gender === 'female' ? '#ec4899' : metrics.gender === 'male' ? '#6366f1' : '#6b7280',
+          color: 'white',
+          border: '2px solid white',
+          fontSize: '11px',
         }}
       >
-        {metrics.gender === 'male' ? '👨' : metrics.gender === 'female' ? '👩' : '⚧️'}{' '}
-        {metrics.gender === 'male' ? 'Hombre' : metrics.gender === 'female' ? 'Mujer' : 'Otro'}
+        {metrics.gender === 'male' ? '👨 HOMBRE' : metrics.gender === 'female' ? '👩 MUJER' : '⚧️ OTRO'}
       </div>
     </div>
   )

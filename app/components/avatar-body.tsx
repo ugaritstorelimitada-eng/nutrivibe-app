@@ -12,6 +12,11 @@ export function AvatarBody({ metrics, style, size }: AvatarBodyProps) {
   const bmi = metrics.weight / Math.pow(metrics.height / 100, 2)
   const gender = metrics.gender ?? 'other'
 
+  // DEBUG: remove in production
+  if (typeof window !== 'undefined') {
+    console.log('[AvatarBody] gender:', gender, 'isFemale:', gender === 'female', 'metrics:', JSON.stringify({ w: metrics.weight, h: metrics.height, a: metrics.age, g: metrics.gender }))
+  }
+
   // ── Gender-specific proportions ──────────────────────────────────────────────
   const isMale   = gender === 'male'
   const isFemale = gender === 'female'
@@ -124,24 +129,38 @@ export function AvatarBody({ metrics, style, size }: AvatarBodyProps) {
 
       {/* ====== LOWER BODY (gender-differentiated) ====== */}
       {isFemale ? (
-        /* ── FEMALE: dress/skirt silhouette ── */
+        /* ── FEMALE: A-line dress silhouette — wider hips, no leg separation ── */
         <>
-          {/* Skirt body — wider at hips, tapering slightly */}
+          {/* Dress body — trapezoidal A-line from waist to hem */}
           <path
-            d={`M${60 - hipW} 92
-               Q${60 - hipW - 3} 120 ${60 - hipW + 2} 148
-               L${60 + hipW - 2} 148
-               Q${60 + hipW + 3} 120 ${60 + hipW} 92Z`}
+            d={`M${60 - torsoW} 88
+               L${60 - hipW - 4} 150
+               L${60 + hipW + 4} 150
+               L${60 + torsoW} 88Z`}
             fill="url(#bottomGrad)"
           />
-          {/* Skirt highlight */}
+          {/* Dress main body — full coverage, no leg split */}
           <path
-            d={`M${60 - hipW + 4} 94
-               Q${60 - hipW} 120 ${60 - hipW + 6} 148`}
-            stroke="rgba(255,255,255,0.1)" strokeWidth="3" fill="none"
+            d={`M${60 - torsoW + 4} 88
+               Q${60 - hipW - 8} 120 ${60 - hipW - 4} 150
+               L${60 + hipW + 4} 150
+               Q${60 + hipW + 8} 120 ${60 + torsoW - 4} 88Z`}
+            fill="url(#bottomGrad)"
           />
-          {/* Skirt waistband */}
-          <rect x={60 - hipW - 1} y="90" width={hipW * 2 + 2} height="4" rx="2" fill="rgba(0,0,0,0.1)" />
+          {/* Dress neckline / bodice */}
+          <path
+            d={`M${60 - torsoW + 4} 88 Q${60 - torsoW + 10} 82 ${60} 80 Q${60 + torsoW - 10} 82 ${60 + torsoW - 4} 88Z`}
+            fill={primary}
+            opacity="0.9"
+          />
+          {/* Dress hem ruffle */}
+          <path
+            d={`M${60 - hipW - 4} 150 Q${60 - hipW / 2} 153 ${60} 150 Q${60 + hipW / 2} 153 ${60 + hipW + 4} 150`}
+            stroke="rgba(0,0,0,0.15)" strokeWidth="1.5" fill="none"
+          />
+          {/* Dress pleat lines */}
+          <path d={`M${60 - hipW / 2} 92 L${60 - hipW / 2 - 2} 150`} stroke="rgba(0,0,0,0.08)" strokeWidth="1" />
+          <path d={`M${60 + hipW / 2} 92 L${60 + hipW / 2 + 2} 150`} stroke="rgba(0,0,0,0.08)" strokeWidth="1" />
           {/* Left shoe (feminine — slight heel) */}
           <path
             d={`M${60 - legW - 2} 148 Q${60 - legW / 2} 143 ${60 - legW / 2 + 6} 148 L${60 + 7} 148 Q${60 + legW / 2 + 1} 150 ${60 + legW / 2 - 4} 156 L${60 - legW - 5} 156 Q${60 - legW - 4} 151 ${60 - legW - 2} 148Z`}
@@ -154,6 +173,8 @@ export function AvatarBody({ metrics, style, size }: AvatarBodyProps) {
             fill="url(#shoeGrad)"
           />
           <ellipse cx={60 + legW / 2 + 1} cy="147" rx="3.5" ry="2" fill="rgba(255,255,255,0.2)" />
+          {/* Debug label inside SVG */}
+          <text x="60" y="118" textAnchor="middle" fontSize="8" fill="rgba(0,0,0,0.3)" fontFamily="sans-serif">MUJER</text>
         </>
       ) : (
         /* ── MALE/OTHER: pants silhouette ── */
