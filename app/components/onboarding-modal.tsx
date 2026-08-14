@@ -166,6 +166,24 @@ export default function OnboardingModal({ onComplete }: OnboardingModalProps) {
   })
   const [visible, setVisible] = useState(true)
 
+  // Saltar — marca como visto sin guardar datos
+  const handleSkip = () => {
+    localStorage.setItem('nutriguia_onboarding_seen', 'true')
+    setVisible(false)
+    setTimeout(() => onComplete({
+      primaryGoal: '',
+      name: '',
+      allergies: [],
+      restrictions: [],
+      cookingLevel: '',
+      budget: '',
+      goals: [],
+      dailyCalories: null,
+      dailyWater: 2000,
+      createdAt: '',
+    }), 300)
+  }
+
   const handleComplete = () => {
     const finalProfile = {
       ...profile,
@@ -174,6 +192,7 @@ export default function OnboardingModal({ onComplete }: OnboardingModalProps) {
     localStorage.setItem('nutriguia_profile', JSON.stringify(finalProfile))
     localStorage.setItem('nutriguia_body_metrics', JSON.stringify(bodyMetrics))
     localStorage.setItem('nutriguia_avatar_style', JSON.stringify(avatarStyle))
+    localStorage.setItem('nutriguia_onboarding_seen', 'true')
     setVisible(false)
     setTimeout(() => onComplete(finalProfile), 300)
   }
@@ -207,12 +226,13 @@ export default function OnboardingModal({ onComplete }: OnboardingModalProps) {
 
   const canContinue = () => {
     switch (step) {
-      case 0: return profile.primaryGoal !== ''
-      case 1: return profile.name.trim().length >= 2
+      // Todos los pasos son opcionales — el usuario puede saltar
+      case 0: return true
+      case 1: return true
       case 2: return true
       case 3: return true
       case 4: return true
-      case 5: return profile.cookingLevel !== ''
+      case 5: return true
       case 6: return true
       default: return true
     }
@@ -246,8 +266,9 @@ export default function OnboardingModal({ onComplete }: OnboardingModalProps) {
                 </div>
               </div>
               <button
-                onClick={handleComplete}
+                onClick={handleSkip}
                 className="p-1.5 rounded-lg hover:bg-white/15 text-white/70 hover:text-white transition-colors"
+                title="Saltar configuración"
               >
                 <X className="w-4 h-4" />
               </button>

@@ -52,9 +52,8 @@ export default function Home() {
     const hasProfile = !!localStorage.getItem('nutriguia_profile')
     const hasSeenOnboarding = !!localStorage.getItem('nutriguia_onboarding_seen')
 
-    // Modo invitado: mostrar onboarding para todos (logueados o no)
-    // El login solo se pide cuando el usuario quiere guardar o pagar
-    if (!hasProfile && !hasSeenOnboarding && !onboardingDoneRef.current) {
+    // Solo mostrar onboarding si nunca se ha visto
+    if (!hasSeenOnboarding && !onboardingDoneRef.current) {
       onboardingDoneRef.current = true
       setTimeout(() => setShowOnboarding(true), 500)
     } else if (hasProfile) {
