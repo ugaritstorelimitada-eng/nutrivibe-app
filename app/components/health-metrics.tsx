@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Droplets, Scale, TrendingUp, Check } from 'lucide-react'
 import { useStreakStore } from '@/app/store/useStreakStore'
+import { useWeightHistoryStore } from '@/app/store/useWeightHistoryStore'
+import WeightHistoryChart from './weight-history-chart'
 
 // ─── Water Tracker ────────────────────────────────────────────────────────────
 function WaterTracker() {
@@ -187,8 +189,9 @@ function BMICalculator() {
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
 
-    // Registrar streak
+    // Registrar streak y guardar en historial de peso
     useStreakStore.getState().recordActivity('weight')
+    useWeightHistoryStore.getState().addEntry(w, imc)
   }
 
   const getBMIColor = () => {
@@ -251,6 +254,19 @@ function BMICalculator() {
           </div>
           <div className="text-sm text-muted-foreground mb-1">tu IMC</div>
           <div className={`text-xs font-medium ${getBMIColor()}`}>{category}</div>
+
+          {/* Feedback motivacional */}
+          {bmi && (
+            <p className="mt-2 text-xs px-3 py-2 rounded-lg bg-muted/60 text-center">
+              {bmi < 18.5
+                ? '💪 Un peso saludable es importante. Consulta con un nutricionista para un plan adecuado.'
+                : bmi < 25
+                ? '🎉 ¡Excelente! Estás en tu peso ideal. Mantén esos hábitos ricos y equilibrados.'
+                : bmi < 30
+                ? '🌱 Con pequeños cambios en tu alimentación puedes mejorar tu bienestar. ¡Estoy aquí para ayudarte!'
+                : '💙 Un cambio gradual es la clave. No se trata de perfección, sino de progreso. ¡Vamos con calma!'}
+            </p>
+          )}
 
           {/* Barra visual */}
           <div className="mt-3 h-2 rounded-full bg-muted overflow-hidden">
@@ -495,6 +511,17 @@ export default function HealthMetrics() {
             <CalorieEstimator />
           </motion.div>
         </div>
+
+        {/* Historial de peso */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.4, delay: 0.3 }}
+          className="mt-4"
+        >
+          <WeightHistoryChart />
+        </motion.div>
       </div>
     </section>
   )

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { Send, Trash2, Leaf, Loader2, ChevronDown, RefreshCw, AlertCircle, Zap, Crown, Star, Lock, User, Download } from 'lucide-react'
+import { Send, Trash2, Leaf, Loader2, ChevronDown, RefreshCw, AlertCircle, Zap, Crown, Star, Lock, User, Download, Camera, X, Flame } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -78,6 +78,10 @@ export default function ChatWidget({ initialPrompt, onProfileUpdate }: ChatWidge
   const [error, setError] = useState<string | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [avatarMood, setAvatarMood] = useState<AvatarMood>('idle')
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [isAnalyzingImage, setIsAnalyzingImage] = useState(false)
+  const [imageAnalysisError, setImageAnalysisError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Zustand store
   const plan = useUserStore(s => s.plan)
@@ -264,6 +268,98 @@ export default function ChatWidget({ initialPrompt, onProfileUpdate }: ChatWidge
     inputRef.current?.focus()
   }
 
+  const handleCameraClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleImageFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Reset input so same file can be selected again
+    e.target.value = ''
+
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const base64 = (ev.target?.result as string)?.split(',')[1]
+      if (base64) {
+        setImagePreview(ev.target?.result as string)
+        setImageAnalysisError(null)
+      }
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const cancelImagePreview = () => {
+    setImagePreview(null)
+    setImageAnalysisError(null)
+  }
+
+  const analyzeImage = async () => {
+    if (!imagePreview) return
+    const base64 = imagePreview.split(',')[1]
+    setIsAnalyzingImage(true)
+    setAvatarMood('typing')
+
+    // Show user message with image
+    const userMsgId = Date.now().toString()
+    const assistantMsgId = (Date.now() + 1).toString()
+    setMessages(prev => [...prev,
+      { id: userMsgId, role: 'user', content: '[📷 Foto de comida — análisis en progreso...]' },
+      { id: assistantMsgId, role: 'assistant', content: '' },
+    ])
+    setImagePreview(null)
+    scrollToBottom('instant')
+
+    try {
+      const res = await fetch('/api/vision', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: base64 }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'Error al analizar la imagen')
+      }
+
+      const { food, calories, protein, carbs, fat, portion, analysis } = data
+      const resultText = `## 🍽️ Análisis Nutricional
+
+**${food}** — ${portion}
+
+| Nutriente | Valor |
+|---|---|
+| 🔥 Calorías | **${calories} kcal** |
+| 💪 Proteínas | ${protein}g |
+| 🍞 Carbohidratos | ${carbs}g |
+| 🥑 Grasas | ${fat}g |
+
+> ${analysis}
+
+*Nota: Este análisis es estimado y puede variar según las porciones exactas y Preparation.*`
+
+      setMessages(prev =>
+        prev.map(m => m.id === assistantMsgId ? { ...m, content: resultText } : m)
+      )
+      setAvatarMood('happy')
+      setTimeout(() => setAvatarMood('idle'), 3000)
+    } catch (err: any) {
+      setImageAnalysisError(err.message || 'No pude analizar la imagen')
+      setMessages(prev => {
+        // Remove the "en progreso" messages on error
+        const filtered = prev.filter(m => m.id !== userMsgId && m.id !== assistantMsgId)
+        return filtered
+      })
+      setAvatarMood('sad')
+      setTimeout(() => setAvatarMood('idle'), 2000)
+    } finally {
+      setIsAnalyzingImage(false)
+      scrollToBottom('smooth')
+    }
+  }
+
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value
     if (value.length <= MAX_CHARS) {
@@ -345,6 +441,18 @@ export default function ChatWidget({ initialPrompt, onProfileUpdate }: ChatWidge
     doc.save(`plan-semanal-nutriguia-${Date.now()}.pdf`)
   }, [lastContent, profile?.name])
   const FREE_DAILY_LIMIT = 5
+
+  // Hidden file input for camera/gallery
+  const hiddenFileInput = (
+    <input
+      ref={fileInputRef}
+      type="file"
+      accept="image/*"
+      capture="environment"
+      onChange={handleImageFile}
+      className="hidden"
+    />
+  )
   const isFreeLimit = plan === 'FREE' && dailyMessageCount >= FREE_DAILY_LIMIT
 
   return (
@@ -603,6 +711,39 @@ export default function ChatWidget({ initialPrompt, onProfileUpdate }: ChatWidge
 
       {/* Input */}
       <div className="px-4 py-3 border-t border-border bg-card">
+        {/* Hidden file input for camera/gallery */}
+        {hiddenFileInput}
+
+        {/* Image preview before sending */}
+        <AnimatePresence>
+          {imagePreview && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="mb-2"
+            >
+              <div className="relative inline-block">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={imagePreview}
+                  alt="Comida seleccionada"
+                  className="h-20 w-20 object-cover rounded-xl border border-border"
+                />
+                <button
+                  onClick={cancelImagePreview}
+                  className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center shadow-sm hover:scale-110 transition-transform"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+              {imageAnalysisError && (
+                <p className="text-xs text-destructive mt-1">{imageAnalysisError}</p>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <div className="flex items-end gap-2">
           <div className="flex-1 relative">
             <textarea
@@ -610,7 +751,7 @@ export default function ChatWidget({ initialPrompt, onProfileUpdate }: ChatWidge
               value={input}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
-              placeholder={isFreeLimit ? 'Límite de mensajes alcanzado' : 'Escribe tu pregunta...'}
+              placeholder={isFreeLimit ? 'Límite de mensajes alcanzado' : '📷 Toma una foto de tu comida...'}
               rows={1}
               className="flex-1 w-full resize-none bg-muted rounded-xl px-4 py-3 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground/60 disabled:opacity-50"
               style={{ minHeight: '44px', maxHeight: '128px' }}
@@ -620,13 +761,36 @@ export default function ChatWidget({ initialPrompt, onProfileUpdate }: ChatWidge
               {input.length}/{MAX_CHARS}
             </div>
           </div>
+
+          {/* Camera button */}
           <button
-            onClick={() => sendMessage(input)}
-            disabled={!input.trim() || isStreaming || input.length > MAX_CHARS || isFreeLimit}
-            className="p-3 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex-shrink-0"
-            aria-label="Enviar mensaje"
+            onClick={handleCameraClick}
+            disabled={isStreaming || isFreeLimit || isAnalyzingImage}
+            className="p-3 rounded-xl bg-emerald-100 text-emerald-700 hover:bg-emerald-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex-shrink-0"
+            aria-label="Escanear comida por foto"
+            title="Escanear comida"
           >
-            {isStreaming ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+            {isAnalyzingImage ? <Loader2 className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
+          </button>
+
+          {/* Send / Analyze button */}
+          <button
+            onClick={imagePreview ? analyzeImage : () => sendMessage(input)}
+            disabled={
+              isStreaming || isFreeLimit || isAnalyzingImage ||
+              (!imagePreview && !input.trim()) ||
+              (!imagePreview && input.length > MAX_CHARS)
+            }
+            className="p-3 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex-shrink-0"
+            aria-label={imagePreview ? 'Analizar imagen' : 'Enviar mensaje'}
+          >
+            {isStreaming || isAnalyzingImage ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : imagePreview ? (
+              <Flame className="w-5 h-5" />
+            ) : (
+              <Send className="w-5 h-5" />
+            )}
           </button>
         </div>
       </div>
