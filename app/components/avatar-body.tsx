@@ -10,20 +10,36 @@ interface AvatarBodyProps {
 
 export function AvatarBody({ metrics, style, size }: AvatarBodyProps) {
   const bmi = metrics.weight / Math.pow(metrics.height / 100, 2)
+  const gender = metrics.gender ?? 'other'
 
-  let torsoW = 22
-  if (bmi < 18.5) torsoW = 18
-  else if (bmi >= 25 && bmi < 30) torsoW = 26
-  else if (bmi >= 30) torsoW = 30
+  // ── Gender-specific proportions ──────────────────────────────────────────────
+  const isMale   = gender === 'male'
+  const isFemale = gender === 'female'
 
-  let armW = 5
-  if (bmi < 18.5) armW = 4
-  else if (bmi >= 30) armW = 7
+  // Base torso width: male > neutral > female
+  let baseTorsoW = isFemale ? 16 : isMale ? 24 : 20
+  if (bmi >= 25 && bmi < 30) baseTorsoW += 4
+  else if (bmi >= 30) baseTorsoW += 8
+  else if (bmi < 18.5) baseTorsoW -= 3
+  const torsoW = baseTorsoW
 
-  let legW = 8
-  if (bmi < 18.5) legW = 6
-  else if (bmi >= 25 && bmi < 30) legW = 10
-  else if (bmi >= 30) legW = 12
+  // Shoulder vs hip ratio: female = hips > shoulders; male = shoulders > hips
+  const shoulderHipRatio = isFemale ? 0.72 : isMale ? 1.18 : 1.0
+
+  // Hip width
+  let hipW = Math.round(torsoW * shoulderHipRatio)
+  if (bmi >= 30) hipW += 4
+  if (bmi < 18.5) hipW -= 2
+
+  // Arms
+  let armW = isFemale ? 4 : isMale ? 6 : 5
+  if (bmi >= 30) armW += 1
+
+  // Legs
+  let legW = isFemale ? 7 : isMale ? 9 : 8
+  if (bmi < 18.5) legW -= 1
+  else if (bmi >= 25 && bmi < 30) legW += 2
+  else if (bmi >= 30) legW += 4
 
   const svgH = size * 1.4
   const primary = style.topColor
@@ -106,30 +122,62 @@ export function AvatarBody({ metrics, style, size }: AvatarBodyProps) {
       {/* ====== SOFT SHADOW ON FLOOR ====== */}
       <ellipse cx="60" cy="156" rx="32" ry="5" fill="url(#shadowGrad)" />
 
-      {/* ====== LEGS ====== */}
-      {/* Left leg */}
-      <rect x={58 - legW - 1} y="94" width={legW} height="55" rx={legW / 2} fill="url(#bottomGrad)" />
-      {/* Left leg highlight */}
-      <rect x={58 - legW - 1 + 2} y="96" width="2" height="52" rx="1" fill="rgba(255,255,255,0.08)" />
-      {/* Left shoe */}
-      <path
-        d={`M${58 - legW - 1 - 1} 148 Q${58 - legW / 2 - 1} 143 ${58 - legW / 2 + 7} 148 L${58 + 9} 148 Q${58 + legW / 2 + 1} 151 ${58 + legW / 2 - 5} 156 L${58 - legW - 4} 156 Q${58 - legW - 3} 152 ${58 - legW - 1 - 1} 148Z`}
-        fill="url(#shoeGrad)"
-      />
-      {/* Shoe highlight */}
-      <ellipse cx={58 - legW / 2} cy="147" rx="4" ry="2" fill="rgba(255,255,255,0.2)" />
-
-      {/* Right leg */}
-      <rect x="61" y="94" width={legW} height="55" rx={legW / 2} fill="url(#bottomGrad)" />
-      {/* Right leg highlight */}
-      <rect x="63" y="96" width="2" height="52" rx="1" fill="rgba(255,255,255,0.08)" />
-      {/* Right shoe */}
-      <path
-        d={`M${60 + 1} 148 Q${60 + legW / 2 + 1} 143 ${60 + legW / 2 + 9} 148 L${60 + legW + 3} 148 Q${60 + legW + 4} 152 ${60 + legW + 2} 156 L${60 - 1} 156 Q${60 + legW / 2 + 1} 151 ${60 + 1} 148Z`}
-        fill="url(#shoeGrad)"
-      />
-      {/* Shoe highlight */}
-      <ellipse cx={60 + legW / 2 + 1} cy="147" rx="4" ry="2" fill="rgba(255,255,255,0.2)" />
+      {/* ====== LOWER BODY (gender-differentiated) ====== */}
+      {isFemale ? (
+        /* ── FEMALE: dress/skirt silhouette ── */
+        <>
+          {/* Skirt body — wider at hips, tapering slightly */}
+          <path
+            d={`M${60 - hipW} 92
+               Q${60 - hipW - 3} 120 ${60 - hipW + 2} 148
+               L${60 + hipW - 2} 148
+               Q${60 + hipW + 3} 120 ${60 + hipW} 92Z`}
+            fill="url(#bottomGrad)"
+          />
+          {/* Skirt highlight */}
+          <path
+            d={`M${60 - hipW + 4} 94
+               Q${60 - hipW} 120 ${60 - hipW + 6} 148`}
+            stroke="rgba(255,255,255,0.1)" strokeWidth="3" fill="none"
+          />
+          {/* Skirt waistband */}
+          <rect x={60 - hipW - 1} y="90" width={hipW * 2 + 2} height="4" rx="2" fill="rgba(0,0,0,0.1)" />
+          {/* Left shoe (feminine — slight heel) */}
+          <path
+            d={`M${60 - legW - 2} 148 Q${60 - legW / 2} 143 ${60 - legW / 2 + 6} 148 L${60 + 7} 148 Q${60 + legW / 2 + 1} 150 ${60 + legW / 2 - 4} 156 L${60 - legW - 5} 156 Q${60 - legW - 4} 151 ${60 - legW - 2} 148Z`}
+            fill="url(#shoeGrad)"
+          />
+          <ellipse cx={60 - legW / 2} cy="147" rx="3.5" ry="2" fill="rgba(255,255,255,0.2)" />
+          {/* Right shoe */}
+          <path
+            d={`M${60 + 1} 148 Q${60 + legW / 2 + 1} 143 ${60 + legW / 2 + 7} 148 L${60 + legW + 4} 148 Q${60 + legW + 5} 151 ${60 + legW + 3} 156 L${60 - 1} 156 Q${60 + legW / 2 + 1} 150 ${60 + 1} 148Z`}
+            fill="url(#shoeGrad)"
+          />
+          <ellipse cx={60 + legW / 2 + 1} cy="147" rx="3.5" ry="2" fill="rgba(255,255,255,0.2)" />
+        </>
+      ) : (
+        /* ── MALE/OTHER: pants silhouette ── */
+        <>
+          {/* Left leg */}
+          <rect x={58 - legW - 1} y="94" width={legW} height="55" rx={legW / 2} fill="url(#bottomGrad)" />
+          <rect x={58 - legW - 1 + 2} y="96" width="2" height="52" rx="1" fill="rgba(255,255,255,0.08)" />
+          {/* Left shoe */}
+          <path
+            d={`M${58 - legW - 1 - 1} 148 Q${58 - legW / 2 - 1} 143 ${58 - legW / 2 + 7} 148 L${58 + 9} 148 Q${58 + legW / 2 + 1} 151 ${58 + legW / 2 - 5} 156 L${58 - legW - 4} 156 Q${58 - legW - 3} 152 ${58 - legW - 1 - 1} 148Z`}
+            fill="url(#shoeGrad)"
+          />
+          <ellipse cx={58 - legW / 2} cy="147" rx="4" ry="2" fill="rgba(255,255,255,0.2)" />
+          {/* Right leg */}
+          <rect x="61" y="94" width={legW} height="55" rx={legW / 2} fill="url(#bottomGrad)" />
+          <rect x="63" y="96" width="2" height="52" rx="1" fill="rgba(255,255,255,0.08)" />
+          {/* Right shoe */}
+          <path
+            d={`M${60 + 1} 148 Q${60 + legW / 2 + 1} 143 ${60 + legW / 2 + 9} 148 L${60 + legW + 3} 148 Q${60 + legW + 4} 152 ${60 + legW + 2} 156 L${60 - 1} 156 Q${60 + legW / 2 + 1} 151 ${60 + 1} 148Z`}
+            fill="url(#shoeGrad)"
+          />
+          <ellipse cx={60 + legW / 2 + 1} cy="147" rx="4" ry="2" fill="rgba(255,255,255,0.2)" />
+        </>
+      )}
 
       {/* ====== TORSO / BODY ====== */}
       {/* Torso shadow layer */}
@@ -185,6 +233,16 @@ export function AvatarBody({ metrics, style, size }: AvatarBodyProps) {
       {/* ====== EARS ====== */}
       <ellipse cx="42" cy="28" rx="3" ry="4" fill="url(#skinGrad)" />
       <ellipse cx="78" cy="28" rx="3" ry="4" fill="url(#skinGrad)" />
+
+      {/* Female earrings */}
+      {isFemale && (
+        <>
+          <circle cx="39" cy="31" r="2.5" fill="#fbbf24" />
+          <circle cx="39" cy="31" r="1.5" fill="#f59e0b" />
+          <circle cx="81" cy="31" r="2.5" fill="#fbbf24" />
+          <circle cx="81" cy="31" r="1.5" fill="#f59e0b" />
+        </>
+      )}
 
       {/* ====== HAIR ====== */}
       {style.hairStyle === 0 && ( // Short

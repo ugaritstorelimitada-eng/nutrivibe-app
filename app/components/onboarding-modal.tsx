@@ -6,6 +6,7 @@ import { X, ChevronRight, ChevronLeft, Check, Sparkles } from 'lucide-react'
 import AnimatedAvatar from './animated-avatar'
 import AvatarCustomizer from './avatar-customizer'
 import type { BodyMetrics, AvatarStyle } from './avatar-customizer'
+import { useUserStore } from '../store/useUserStore'
 
 interface UserProfile {
   primaryGoal: string
@@ -148,6 +149,15 @@ export default function OnboardingModal({ onComplete }: OnboardingModalProps) {
     dailyWater: 2000,
     createdAt: '',
   })
+  const setGender = useUserStore(s => s.setGender)
+  const setMetrics = useUserStore(s => s.setMetrics)
+
+  const handleMetricsChange = (m: BodyMetrics) => {
+    setBodyMetrics(m)
+    setGender(m.gender)
+    setMetrics(m.weight, m.height, m.age)
+  }
+
   const [bodyMetrics, setBodyMetrics] = useState<BodyMetrics>({
     weight: 70,
     height: 170,
@@ -346,7 +356,7 @@ export default function OnboardingModal({ onComplete }: OnboardingModalProps) {
                   <div className="max-h-[420px] overflow-y-auto pr-1 -mr-1">
                     <AvatarCustomizer
                       metrics={bodyMetrics}
-                      onMetricsChange={setBodyMetrics}
+                      onMetricsChange={handleMetricsChange}
                       style={avatarStyle}
                       onStyleChange={setAvatarStyle}
                     />
@@ -503,7 +513,7 @@ export default function OnboardingModal({ onComplete }: OnboardingModalProps) {
                     <div className="mb-4">
                       <AvatarCustomizer
                         metrics={bodyMetrics}
-                        onMetricsChange={setBodyMetrics}
+                        onMetricsChange={handleMetricsChange}
                         style={avatarStyle}
                         onStyleChange={setAvatarStyle}
                         compact
