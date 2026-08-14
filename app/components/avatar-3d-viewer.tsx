@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Maximize2, ExternalLink, Loader2 } from 'lucide-react'
 import type { BodyMetrics, AvatarStyle } from './avatar-customizer'
+import { AvatarBody } from './avatar-body'
 
 interface Avatar3DViewerProps {
   metrics: BodyMetrics
@@ -29,99 +30,73 @@ const READY_PLAYER_ME_SUBDOMAIN = 'nutriguia' // ← Cambia esto por tu subdomai
 const USE_IFRAME = false // Cambiar a true cuando tengas subdomain real en RPM
 
 // ============================================================
-// Pick avatar image based on gender + skinTone via DiceBear Avatars API
+// Full-body SVG avatar using AvatarBody — the real, working avatar
 // ============================================================
-function getAvatarImage(metrics: BodyMetrics, style: AvatarStyle): string {
-  // DiceBear "pixel-art" style — deterministic from metrics
-  const seed = `${metrics.weight}-${metrics.height}-${metrics.age}-${style.skinTone}`
-  const encoded = encodeURIComponent(seed)
-  return `https://api.dicebear.com/9.x/pixel-art/svg?seed=${encoded}&backgroundColor=0d9488`
-}
-
-// ============================================================
-// 3D Memoji-style avatar display (PNG fallback)
-// ============================================================
-function AvatarDisplayPNG({ metrics, style, isRotating, rotation }: {
+function AvatarDisplaySVG({ metrics, style, isRotating, rotation }: {
   metrics: BodyMetrics
   style: AvatarStyle
   isRotating: boolean
   rotation: number
 }) {
-  const avatarSrc = getAvatarImage(metrics, style)
-
   return (
     <div
       className="relative flex items-center justify-center"
       style={{
-        transform: `perspective(1000px) rotateY(${rotation}deg) ${isRotating ? 'scale(1.02)' : 'scale(1)'}`,
-        transition: isRotating ? 'none' : 'transform 0.4s ease-out',
+        transform: `perspective(1200px) rotateY(${rotation}deg) scale(${isRotating ? 1.05 : 1})`,
+        transition: isRotating ? 'none' : 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
         transformStyle: 'preserve-3d',
       }}
     >
-      {/* Glow aura */}
+      {/* Outer glow aura */}
       <div
-        className="absolute rounded-full blur-3xl opacity-30 pointer-events-none"
+        className="absolute rounded-full pointer-events-none"
         style={{
-          width: '200px',
-          height: '200px',
-          background: `radial-gradient(circle, ${style.topColor}99 0%, transparent 70%)`,
+          width: '220px',
+          height: '300px',
+          background: `radial-gradient(ellipse, ${style.topColor}30 0%, transparent 70%)`,
           top: '50%',
           left: '50%',
-          transform: 'translate(-50%, -60%)',
+          transform: 'translate(-50%, -55%)',
+          filter: 'blur(24px)',
         }}
       />
 
-      {/* Main 3D Avatar Image */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        key={avatarSrc}
-        src={avatarSrc}
-        alt="Tu NutriAvatar 3D"
-        onError={(e) => {
-          // Fallback if DiceBear fails — use inline SVG emoji avatar
-          const target = e.currentTarget
-          target.style.display = 'none'
-          const parent = target.parentElement
-          if (parent) {
-            const fallback = document.createElement('div')
-            fallback.style.cssText = `
-              display: flex; align-items: center; justify-content: center;
-              width: 200px; height: 200px; border-radius: 50%;
-              background: ${style.topColor}20;
-              font-size: 96px;
-              box-shadow: 0 25px 50px rgba(99, 102, 241, 0.25), 0 0 12px ${style.topColor}60;
-            `
-            fallback.textContent = '🧑'
-            parent.appendChild(fallback)
-          }
-        }}
-        className="relative z-10 object-contain transition-all duration-500"
-        style={{
-          height: '340px',
-          width: 'auto',
-          maxWidth: '100%',
-          filter: `drop-shadow(0 25px 50px rgba(99, 102, 241, 0.25)) drop-shadow(0 0 12px ${style.topColor}60)`,
-        }}
-      />
-
-      {/* Skin tone overlay */}
+      {/* Stage spotlight */}
       <div
-        className="absolute inset-0 rounded-3xl pointer-events-none z-20 mix-blend-multiply"
+        className="absolute rounded-full pointer-events-none"
         style={{
-          background: `radial-gradient(ellipse at 40% 20%, ${style.skinTone}20 0%, transparent 50%)`,
-          height: '340px',
-          width: '240px',
+          width: '180px',
+          height: '80px',
+          background: `radial-gradient(ellipse, ${style.topColor}20 0%, transparent 70%)`,
+          bottom: '0',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          filter: 'blur(16px)',
         }}
       />
 
-      {/* Floor reflection */}
+      {/* The actual AvatarBody SVG */}
       <div
-        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-40 h-8 rounded-full opacity-20 pointer-events-none"
         style={{
-          background: 'radial-gradient(ellipse, rgba(99, 102, 241, 0.4) 0%, transparent 70%)',
-          filter: 'blur(8px)',
+          transform: `rotateX(5deg)`,
+          filter: `drop-shadow(0 30px 60px ${style.topColor}40) drop-shadow(0 0 20px ${style.topColor}30)`,
         }}
-      />
+      >
+        <AvatarBody metrics={metrics} style={style} size={200} />
+      </div>
+
+      {/* Gender indicator badge */}
+      <div
+        className="absolute bottom-12 left-1/2 -translate-x-1/2 text-xs font-bold px-2 py-1 rounded-full"
+        style={{
+          background: `${style.topColor}20`,
+          color: style.topColor,
+          border: `1px solid ${style.topColor}40`,
+        }}
+      >
+        {metrics.gender === 'male' ? '👨' : metrics.gender === 'female' ? '👩' : '⚧️'}{' '}
+        {metrics.gender === 'male' ? 'Hombre' : metrics.gender === 'female' ? 'Mujer' : 'Otro'}
+      </div>
     </div>
   )
 }
@@ -263,42 +238,6 @@ function AvatarModelViewer({ glbUrl }: { glbUrl: string }) {
 }
 
 // ============================================================
-// Floating food elements for background decoration
-// ============================================================
-function FloatingEl({ emoji, size, top, left, right, bottom, delay, blur, opacity }: {
-  emoji: string
-  size: number
-  top?: string
-  left?: string
-  right?: string
-  bottom?: string
-  delay: number
-  blur: number
-  opacity: number
-}) {
-  return (
-    <div
-      className="absolute select-none pointer-events-none"
-      style={{
-        top, left, right, bottom,
-        filter: blur > 0 ? `blur(${blur}px)` : undefined,
-        opacity,
-        animation: `float${delay} ${4 + delay * 0.5}s ease-in-out infinite`,
-        animationDelay: `${delay}s`,
-      }}
-    >
-      <div style={{
-        fontSize: `${size}px`,
-        filter: 'drop-shadow(0 6px 12px rgba(0,0,0,0.12))',
-        transform: blur > 0 ? 'scale(0.85)' : 'scale(1)',
-      }}>
-        {emoji}
-      </div>
-    </div>
-  )
-}
-
-// ============================================================
 // Main Avatar3DViewer Component
 // ============================================================
 export default function Avatar3DViewer({
@@ -363,24 +302,14 @@ export default function Avatar3DViewer({
           style={{ background: 'radial-gradient(ellipse 55% 55% at 50% 25%, rgba(255,255,255,0.85) 0%, transparent 65%)' }}
         />
 
-        {/* Floating food elements — 3 depth layers */}
-        <FloatingEl emoji="🥗" size={38} top="10%" left="7%" delay={0} blur={0} opacity={0.7} />
-        <FloatingEl emoji="🍎" size={34} top="18%" right="8%" delay={0.4} blur={0} opacity={0.65} />
-        <FloatingEl emoji="🥑" size={30} bottom="28%" left="5%" delay={0.8} blur={0.5} opacity={0.3} />
-        <FloatingEl emoji="🥦" size={36} bottom="22%" right="7%" delay={1.2} blur={0} opacity={0.7} />
-        <FloatingEl emoji="🍊" size={28} top="38%" left="3%" delay={0.3} blur={1} opacity={0.25} />
-        <FloatingEl emoji="🥕" size={26} top="50%" right="4%" delay={0.7} blur={1.5} opacity={0.2} />
-        <FloatingEl emoji="🌿" size={22} bottom="38%" right="2%" delay={1.5} blur={2} opacity={0.15} />
-        <FloatingEl emoji="🍇" size={24} top="25%" left="12%" delay={0.6} blur={0.5} opacity={0.3} />
-
         {/* Avatar content */}
         <div className="relative z-10 flex flex-col items-center justify-center w-full h-full">
           {avatarGlbUrl ? (
             // model-viewer con modelo GLB real exportado de RPM
             <AvatarModelViewer glbUrl={avatarGlbUrl} />
           ) : (
-            // Fallback PNG con 3 tipos corporales según BMI
-            <AvatarDisplayPNG
+            // Full-body SVG avatar con silueta correcta por género
+            <AvatarDisplaySVG
               metrics={metrics}
               style={style}
               isRotating={isRotating ?? false}
@@ -391,7 +320,7 @@ export default function Avatar3DViewer({
 
         {/* Badge */}
         <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg z-20">
-          <span>{avatarGlbUrl ? '3D LIVE' : '3D'}</span>
+          <span>TU AVATAR</span>
           <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
         </div>
 

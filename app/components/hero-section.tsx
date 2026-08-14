@@ -60,7 +60,11 @@ export default function HeroSection() {
 
   const bmi = metrics.weight / Math.pow(metrics.height / 100, 2)
   const bmiCat = getBMICategory(bmi)
-  const bmr = Math.round(88.362 + (13.397 * metrics.weight) + (4.799 * metrics.height) - (5.677 * metrics.age))
+  const bmr = Math.round(
+    metrics.gender === 'female'
+      ? 447.593 + (9.247 * metrics.weight) + (3.098 * metrics.height) - (4.330 * metrics.age)
+      : 88.362 + (13.397 * metrics.weight) + (4.799 * metrics.height) - (5.677 * metrics.age)
+  )
   const calorieNeeds = Math.round(bmr * 1.55)
 
   const handleRotate = () => {
@@ -287,6 +291,31 @@ export default function HeroSection() {
               </h3>
 
               <div className="space-y-4">
+                {/* Gender Selector */}
+                <div>
+                  <span className="text-xs text-muted-foreground block mb-2">Sexo biológico</span>
+                  <div className="grid grid-cols-3 gap-2 bg-gray-100 p-1 rounded-xl">
+                    {(['male', 'female', 'other'] as const).map(g => (
+                      <button
+                        key={g}
+                        onClick={() => setMetrics(m => ({ ...m, gender: g }))}
+                        className={`flex items-center justify-center gap-1 py-2 px-2 rounded-lg text-xs font-semibold transition-all ${
+                          metrics.gender === g
+                            ? g === 'male'
+                              ? 'bg-indigo-600 text-white shadow-sm'
+                              : g === 'female'
+                              ? 'bg-pink-500 text-white shadow-sm'
+                              : 'bg-gray-600 text-white shadow-sm'
+                            : 'text-gray-500 hover:text-gray-800 bg-white hover:bg-gray-50'
+                        }`}
+                      >
+                        {g === 'male' ? '👨' : g === 'female' ? '👩' : '⚧️'}{' '}
+                        {g === 'male' ? 'Hombre' : g === 'female' ? 'Mujer' : 'Otro'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Weight */}
                 <div>
                   <div className="flex justify-between text-xs mb-1">
