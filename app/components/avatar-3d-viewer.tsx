@@ -28,17 +28,14 @@ interface Avatar3DViewerProps {
 const READY_PLAYER_ME_SUBDOMAIN = 'nutriguia' // ← Cambia esto por tu subdomain real
 const USE_IFRAME = false // Cambiar a true cuando tengas subdomain real en RPM
 
-// URL pública de un modelo GLB de ejemplo (CC0 license)
-// Reemplazar por tu modelo exportado de Ready Player Me
-const SAMPLE_GLB_URL = 'https://vazxmixjsiawhamofees.supabase.co/storage/v1/object/public/models/kuluma/model.gltf'
-
 // ============================================================
-// Pick avatar image based on BMI category
+// Pick avatar image based on gender + skinTone via DiceBear Avatars API
 // ============================================================
-function getAvatarImage(bmi: number): string {
-  if (bmi < 18.5) return '/avatar-3d-slim.png'
-  if (bmi >= 25) return '/avatar-3d-broad.png'
-  return '/avatar-3d-average.png'
+function getAvatarImage(metrics: BodyMetrics, style: AvatarStyle): string {
+  // DiceBear "pixel-art" style — deterministic from metrics
+  const seed = `${metrics.weight}-${metrics.height}-${metrics.age}-${style.skinTone}`
+  const encoded = encodeURIComponent(seed)
+  return `https://api.dicebear.com/9.x/pixel-art/svg?seed=${encoded}&backgroundColor=0d9488`
 }
 
 // ============================================================
@@ -50,8 +47,7 @@ function AvatarDisplayPNG({ metrics, style, isRotating, rotation }: {
   isRotating: boolean
   rotation: number
 }) {
-  const bmi = metrics.weight / Math.pow(metrics.height / 100, 2)
-  const avatarSrc = getAvatarImage(bmi)
+  const avatarSrc = getAvatarImage(metrics, style)
 
   return (
     <div
@@ -76,10 +72,29 @@ function AvatarDisplayPNG({ metrics, style, isRotating, rotation }: {
       />
 
       {/* Main 3D Avatar Image */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         key={avatarSrc}
         src={avatarSrc}
         alt="Tu NutriAvatar 3D"
+        onError={(e) => {
+          // Fallback if DiceBear fails — use inline SVG emoji avatar
+          const target = e.currentTarget
+          target.style.display = 'none'
+          const parent = target.parentElement
+          if (parent) {
+            const fallback = document.createElement('div')
+            fallback.style.cssText = `
+              display: flex; align-items: center; justify-content: center;
+              width: 200px; height: 200px; border-radius: 50%;
+              background: ${style.topColor}20;
+              font-size: 96px;
+              box-shadow: 0 25px 50px rgba(99, 102, 241, 0.25), 0 0 12px ${style.topColor}60;
+            `
+            fallback.textContent = '🧑'
+            parent.appendChild(fallback)
+          }
+        }}
         className="relative z-10 object-contain transition-all duration-500"
         style={{
           height: '340px',

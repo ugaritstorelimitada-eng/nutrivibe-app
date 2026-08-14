@@ -27,7 +27,7 @@ export default function HeroSection() {
   const [showClothes, setShowClothes] = useState(false)
   const [isRotating, setIsRotating] = useState(false)
 
-  const [metrics, setMetrics] = useState<BodyMetrics>({ weight: 70, height: 170, age: 30, gender: 'other' })
+  const [metrics, setMetrics] = useState<BodyMetrics>({ weight: 70, height: 170, age: 30, gender: 'male' })
   const [style, setStyle] = useState<AvatarStyle>({
     skinTone: '#d4a574', hairStyle: 1, hairColor: '#1f2937',
     topStyle: 0, topColor: '#6366f1', bottomColor: '#1f2937',
