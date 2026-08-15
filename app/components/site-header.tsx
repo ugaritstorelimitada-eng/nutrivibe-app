@@ -295,7 +295,7 @@ export default function SiteHeader({ user }: SiteHeaderProps) {
           {/* Wordmark: Nutri (normal) + Vibe (bold) */}
           <span className="font-display text-lg leading-none">
             <span className="font-normal text-gray-800 group-hover:text-gray-900 transition-colors">Nutri</span>
-            <span className="font-bold" style="background: linear-gradient(135deg, #10b981, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Vibe</span>
+            <span className="font-bold" style={{ background: 'linear-gradient(135deg, #10b981, #8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Vibe</span>
           </span>
         </a>
 

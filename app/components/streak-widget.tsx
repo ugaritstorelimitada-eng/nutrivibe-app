@@ -82,7 +82,7 @@ export default function StreakWidget() {
     <div className="relative">
       {/* Title */}
       <div className="text-center mb-3">
-        <h3 className="font-display text-lg font-bold" style="background: linear-gradient(135deg, #10b981, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+        <h3 className="font-display text-lg font-bold" style={{ background: 'linear-gradient(135deg, #10b981, #8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
           VibeStreak 🔥
         </h3>
       </div>
