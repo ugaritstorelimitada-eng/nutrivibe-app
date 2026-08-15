@@ -80,6 +80,12 @@ export default function StreakWidget() {
 
   return (
     <div className="relative">
+      {/* Title */}
+      <div className="text-center mb-3">
+        <h3 className="font-display text-lg font-bold" style="background: linear-gradient(135deg, #10b981, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+          VibeStreak 🔥
+        </h3>
+      </div>
       {/* Hydration toast */}
       {showHydrationToast && (
         <div className="absolute -top-12 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl bg-cyan-500 text-white text-sm font-medium shadow-lg animate-bounce">

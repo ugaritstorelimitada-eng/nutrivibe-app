@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Leaf, RotateCcw, TrendingUp, Camera, Zap } from 'lucide-react'
+import { RotateCcw, TrendingUp, Camera, Zap } from 'lucide-react'
 import Avatar3DViewer from './avatar-3d-viewer'
 import type { BodyMetrics, AvatarStyle } from './avatar-customizer'
 
@@ -104,8 +104,18 @@ export default function HeroSection() {
           animate={{ opacity: 1, y: 0 }}
           className="flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-8 w-fit mx-auto"
         >
-          <Leaf className="w-4 h-4" />
-          Alimentación inteligente · Tu VibeAvatar personalizado
+          <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
+            <defs>
+              <linearGradient id="badgeGrad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor="#10b981"/>
+                <stop offset="100%" stopColor="#8b5cf6"/>
+              </linearGradient>
+            </defs>
+            <path d="M16 2C16 2 8 6 8 14C8 17.866 11.134 21 15 21C15 21 11 22 9 26C14.5 25 18 21 18 16C18 11 21 8 21 8C21 8 24 11 24 16C24 21 20 26 16 28C16 28 17 24 15 21C18.866 21 22 17.866 22 14C22 8 16 2 16 2Z" fill="url(#badgeGrad)"/>
+            <circle cx="16" cy="14" r="4" fill="white" fillOpacity="0.9"/>
+            <circle cx="16" cy="14" r="2" fill="url(#badgeGrad)"/>
+          </svg>
+          Tu asistente inteligente de nutrición, entrenamiento y hábitos saludables
         </motion.div>
 
         {/* Title */}
@@ -121,7 +131,7 @@ export default function HeroSection() {
           <p className="text-muted-foreground text-lg max-w-xl mx-auto">
             {userName
               ? 'Tu plan nutricional te espera. Sigue conversando o explora nuevos temas.'
-              : 'Tu asistente personal de alimentación sana con IA.'}
+              : 'Tu asistente inteligente de nutrición, entrenamiento y hábitos saludables.'}
           </p>
         </motion.div>
 

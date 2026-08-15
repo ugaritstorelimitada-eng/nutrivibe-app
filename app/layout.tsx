@@ -12,14 +12,14 @@ const jetbrainsMono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mon
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXTAUTH_URL || 'http://localhost:3000'),
-  title: 'NutriGuía — Tu asistente de alimentación sana',
-  description: 'Consulta a NutriGuía, tu asistente inteligente para comer mejor. Recibe consejos personalizados sobre nutrición, recetas saludables y hábitos alimenticios.',
+  title: 'NutriVibe — Tu Asistente de Nutrición y Entrenamiento',
+  description: 'NutriVibe es tu asistente inteligente de nutrición, entrenamiento y hábitos saludables. Recibe consejos personalizados con IA.',
   icons: {
     icon: '/favicon.svg',
     shortcut: '/favicon.svg',
   },
   openGraph: {
-    title: 'NutriGuía — Tu asistente de alimentación sana',
+    title: 'NutriVibe — Tu Asistente de Nutrición y Entrenamiento',
     description: 'Consulta a NutriGuía, tu asistente inteligente para comer mejor.',
     images: ['/og-image.png'],
   },

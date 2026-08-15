@@ -1,5 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
-  <circle cx="128" cy="128" r="128" fill="#ffffff"/>
-  <path d="M128 60 C128 60 100 65 85 95 C70 125 75 155 95 170 C100 165 105 155 108 145 C110 150 115 160 125 165 C140 150 145 120 140 90 C138 75 133 65 128 60 Z" fill="#22c55e"/>
-  <path d="M108 145 Q115 155 125 165" fill="none" stroke="#22c55e" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="128" cy="128" r="128" fill="url(#nvbg)"/>
+  <defs>
+    <linearGradient id="nvbg" x1="0" y1="0" x2="256" y2="256" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+  </defs>
+  <!-- Isotipo chispa/energía NutriVibe -->
+  <path d="M128 40 C128 40 88 56 88 104 C88 125.5 106.5 144 128 144 C128 144 108 152 92 180 C138 172 164 148 164 112 C164 76 172 64 172 64 C172 64 192 88 192 120 C192 152 168 180 128 196 C128 196 140 160 120 144 C147.5 144 172 119.5 172 92 C172 56 128 40 128 40Z" fill="white" fill-opacity="0.95"/>
+  <circle cx="128" cy="104" r="24" fill="white"/>
+  <circle cx="128" cy="104" r="14" fill="url(#nvbg)"/>
 </svg>

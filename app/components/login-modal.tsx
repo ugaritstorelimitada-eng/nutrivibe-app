@@ -58,8 +58,8 @@ export default function LoginModal({ onLogin, onGuest }: LoginModalProps) {
           >
             <Sparkles className="w-8 h-8 text-white" />
           </motion.div>
-          <h1 className="text-white text-2xl font-bold mb-1">NutriGuía</h1>
-          <p className="text-white/70 text-sm">Tu asistente nutricional inteligente</p>
+          <h1 className="text-white text-2xl font-bold mb-1">NutriVibe</h1>
+          <p className="text-white/70 text-sm">Tu asistente inteligente de nutrición y bienestar</p>
         </div>
 
         {/* Body */}

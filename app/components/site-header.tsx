@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Leaf, Stethoscope, LogOut, Zap, Crown, Star, ChevronDown, User, UserCircle, BarChart, MessageSquare, ExternalLink } from 'lucide-react'
+import { Stethoscope, LogOut, Zap, Crown, Star, ChevronDown, User, UserCircle, BarChart, MessageSquare, ExternalLink } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { User as LoginUser } from './login-modal'
 import { useUserStore } from '../store/useUserStore'
@@ -277,12 +277,27 @@ export default function SiteHeader({ user }: SiteHeaderProps) {
     <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
       <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
         {/* Logo */}
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-            <Leaf className="w-4.5 h-4.5 text-primary" />
-          </div>
-          <span className="font-display font-bold text-lg">NutriVibe</span>
-        </div>
+        <a href="/" className="flex items-center gap-2.5 group">
+          {/* Isotipo: chispa/energía estilizada */}
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="logoGrad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor="#10b981"/>
+                <stop offset="100%" stopColor="#8b5cf6"/>
+              </linearGradient>
+            </defs>
+            {/* Outer leaf/spark shape */}
+            <path d="M16 2C16 2 8 6 8 14C8 17.866 11.134 21 15 21C15 21 11 22 9 26C14.5 25 18 21 18 16C18 11 21 8 21 8C21 8 24 11 24 16C24 21 20 26 16 28C16 28 17 24 15 21C18.866 21 22 17.866 22 14C22 8 16 2 16 2Z" fill="url(#logoGrad)"/>
+            {/* Inner energy core */}
+            <circle cx="16" cy="14" r="4" fill="white" fillOpacity="0.9"/>
+            <circle cx="16" cy="14" r="2" fill="url(#logoGrad)"/>
+          </svg>
+          {/* Wordmark: Nutri (normal) + Vibe (bold) */}
+          <span className="font-display text-lg leading-none">
+            <span className="font-normal text-gray-800 group-hover:text-gray-900 transition-colors">Nutri</span>
+            <span className="font-bold" style="background: linear-gradient(135deg, #10b981, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Vibe</span>
+          </span>
+        </a>
 
         {/* Nav + Account */}
         <div className="flex items-center gap-1">
