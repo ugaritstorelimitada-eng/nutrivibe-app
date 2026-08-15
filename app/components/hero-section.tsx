@@ -33,6 +33,20 @@ export default function HeroSection() {
     topStyle: 0, topColor: '#6366f1', bottomColor: '#1f2937',
     shoeColor: '#1f2937', accessory: 0,
   })
+  const [activityLevel, setActivityLevel] = useState<'sedentary' | 'light' | 'moderate' | 'intense'>('moderate')
+
+  const ACTIVITY_MULT = {
+    sedentary: 1.2,
+    light: 1.375,
+    moderate: 1.55,
+    intense: 1.725,
+  }
+  const ACTIVITY_CHIPS = [
+    { id: 'sedentary' as const, label: 'Sedentario', icon: '🪑', desc: 'Poco o nada' },
+    { id: 'light' as const, label: 'Ligero', icon: '🚶', desc: '1-3 días/semana' },
+    { id: 'moderate' as const, label: 'Moderado', icon: '🏋️', desc: '3-5 días/semana' },
+    { id: 'intense' as const, label: 'Intenso', icon: '🔥', desc: '6-7 días/semana' },
+  ]
 
   useEffect(() => {
     // Load saved data
@@ -65,7 +79,8 @@ export default function HeroSection() {
       ? 447.593 + (9.247 * metrics.weight) + (3.098 * metrics.height) - (4.330 * metrics.age)
       : 88.362 + (13.397 * metrics.weight) + (4.799 * metrics.height) - (5.677 * metrics.age)
   )
-  const calorieNeeds = Math.round(bmr * 1.55)
+  const tdee = Math.round(bmr * ACTIVITY_MULT[activityLevel])
+  const calorieNeeds = tdee
 
   const handleRotate = () => {
     setIsRotating(true)
@@ -90,7 +105,7 @@ export default function HeroSection() {
           className="flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-8 w-fit mx-auto"
         >
           <Leaf className="w-4 h-4" />
-          Alimentación inteligente · Tu NutriAvatar personalizado
+          Alimentación inteligente · Tu VibeAvatar personalizado
         </motion.div>
 
         {/* Title */}
@@ -135,7 +150,7 @@ export default function HeroSection() {
                     <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
                   </div>
                   <div className="flex-1 text-center">
-                    <span className="text-white/80 text-xs font-medium">Tu NutriAvatar 3D</span>
+                    <span className="text-white/80 text-xs font-medium">Tu VibeAvatar 3D</span>
                   </div>
                   <Camera className="w-4 h-4 text-white/60" />
                 </div>
@@ -280,7 +295,7 @@ export default function HeroSection() {
           <div className="space-y-4">
             {/* Panel title */}
             <div className="text-center lg:text-left">
-              <h2 className="text-2xl font-bold mb-1">Genera tu NutriAvatar</h2>
+              <h2 className="text-2xl font-bold mb-1">Genera tu VibeAvatar</h2>
               <p className="text-sm text-muted-foreground">Ajusta tus medidas y personaliza tu estilo</p>
             </div>
 
@@ -360,6 +375,28 @@ export default function HeroSection() {
                     className="w-full accent-indigo-600 h-2"
                   />
                 </div>
+
+                {/* Activity Level */}
+                <div>
+                  <span className="text-xs text-muted-foreground block mb-2">Actividad física</span>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {ACTIVITY_CHIPS.map(chip => (
+                      <button
+                        key={chip.id}
+                        onClick={() => setActivityLevel(chip.id)}
+                        title={chip.desc}
+                        className={`flex flex-col items-center gap-0.5 py-2 px-1 rounded-xl text-xs font-semibold transition-all border-2 ${
+                          activityLevel === chip.id
+                            ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                            : 'bg-gray-50 text-gray-600 border-gray-100 hover:border-indigo-200 hover:bg-indigo-50'
+                        }`}
+                      >
+                        <span className="text-base">{chip.icon}</span>
+                        <span className="leading-tight text-center">{chip.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -382,10 +419,19 @@ export default function HeroSection() {
                 <div className="flex-1">
                   <div className="text-sm font-bold" style={{ color: bmiCat.color }}>{bmiCat.label}</div>
                   <div className="text-xs text-muted-foreground mt-0.5">
-                    Calorías: <span className="font-semibold text-gray-700">{calorieNeeds} kcal/día</span>
+                    <span className="text-muted-foreground/70">Gasto total (TDEE): </span>
+                    <span className="font-bold text-indigo-600">{calorieNeeds} kcal/día</span>
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    Metabolismo basal: <span className="font-semibold text-gray-700">{bmr} kcal</span>
+                    <span className="text-muted-foreground/70">Metabolismo basal: </span>
+                    <span className="font-semibold text-gray-700">{bmr} kcal</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                    <span className="text-muted-foreground/70">Nivel: </span>
+                    <span className="inline-flex items-center gap-0.5 bg-indigo-50 text-indigo-600 font-semibold px-1.5 py-0.5 rounded-full text-[10px]">
+                      {ACTIVITY_CHIPS.find(c => c.id === activityLevel)?.icon}
+                      {' '}{ACTIVITY_CHIPS.find(c => c.id === activityLevel)?.label}
+                    </span>
                   </div>
                 </div>
               </div>

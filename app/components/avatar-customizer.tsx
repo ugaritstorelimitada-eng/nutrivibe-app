@@ -114,7 +114,7 @@ export default function AvatarCustomizer({
         </motion.div>
 
         <div className="mt-3 text-center">
-          <div className="text-xs text-muted-foreground">Tu NutriGuía Avatar</div>
+          <div className="text-xs text-muted-foreground">Tu NutriVibe Avatar</div>
         </div>
 
         {/* AI Assistant mini reference */}

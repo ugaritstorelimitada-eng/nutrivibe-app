@@ -1,109 +1,312 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Maximize2, ExternalLink, Loader2 } from 'lucide-react'
 import type { BodyMetrics, AvatarStyle } from './avatar-customizer'
-import { AvatarBody } from './avatar-body'
+import * as THREE from 'three'
 
-interface Avatar3DViewerProps {
+// Ready Player Me subdomain (configure at readyplayer.me)
+const READY_PLAYER_ME_SUBDOMAIN = 'nutriguia'
+const USE_IFRAME = false
+
+// ============================================================
+// Three.js Avatar Renderer — stylized 3D human with Pixar-like look
+// ============================================================
+function Avatar3DRenderer({ metrics, style, rotation, isRotating }: {
   metrics: BodyMetrics
   style: AvatarStyle
-  isRotating?: boolean
-  showClothes?: boolean
-  showProgress?: boolean
-}
-
-// ============================================================
-// READY PLAYER ME CONFIGURATION
-// ============================================================
-// Para activar el iframe 3D real, necesitas:
-// 1. Crear una cuenta en https://readyplayer.me
-// 2. Crear un subdomain (ej: "nutriguia") en tu panel de RPM
-// 3. Cambiar READY_PLAYER_ME_SUBDOMAIN por tu subdomain
-// 4. Descomentar la línea USE_IFRAME = true
-//
-// El iframe usa ?frameApi para comunicar el URL del modelo
-// al componente padre vía postMessage
-// ============================================================
-
-const READY_PLAYER_ME_SUBDOMAIN = 'nutriguia' // ← Cambia esto por tu subdomain real
-const USE_IFRAME = false // Cambiar a true cuando tengas subdomain real en RPM
-
-// ============================================================
-// Full-body SVG avatar using AvatarBody — the real, working avatar
-// ============================================================
-function AvatarDisplaySVG({ metrics, style, isRotating, rotation }: {
-  metrics: BodyMetrics
-  style: AvatarStyle
-  isRotating: boolean
   rotation: number
+  isRotating: boolean
 }) {
+  const mountRef = useRef<HTMLDivElement>(null)
+  const sceneRef = useRef<{
+    scene: THREE.Scene
+    camera: THREE.PerspectiveCamera
+    renderer: THREE.WebGLRenderer
+    bodyGroup: THREE.Group
+    animFrame: number
+  } | null>(null)
+
+  const isFemale = metrics.gender === 'female'
+  const isMale = metrics.gender === 'male'
+  const bmi = metrics.weight / Math.pow(metrics.height / 100, 2)
+  const bmiScale = bmi < 18.5 ? 0.85 : bmi < 25 ? 1.0 : bmi < 30 ? 1.15 : 1.3
+  const heightScale = metrics.height / 170
+
+  useEffect(() => {
+    if (!mountRef.current) return
+    const container = mountRef.current
+    const w = container.clientWidth || 300
+    const h = container.clientHeight || 380
+
+    // Scene
+    const scene = new THREE.Scene()
+    const camera = new THREE.PerspectiveCamera(40, w / h, 0.1, 100)
+    camera.position.set(0, 0, 6)
+    camera.lookAt(0, 0, 0)
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
+    renderer.setSize(w, h)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+    renderer.shadowMap.enabled = true
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap
+    renderer.outputColorSpace = THREE.SRGBColorSpace
+    renderer.toneMapping = THREE.ACESFilmicToneMapping
+    renderer.toneMappingExposure = 1.1
+    container.appendChild(renderer.domElement)
+
+    // Lights
+    const ambient = new THREE.AmbientLight(0xffffff, 0.65)
+    scene.add(ambient)
+
+    const keyLight = new THREE.DirectionalLight(0xfff4e0, 1.5)
+    keyLight.position.set(3, 5, 4)
+    keyLight.castShadow = true
+    keyLight.shadow.mapSize.setScalar(1024)
+    keyLight.shadow.camera.near = 0.5
+    keyLight.shadow.camera.far = 20
+    keyLight.shadow.bias = -0.001
+    scene.add(keyLight)
+
+    const fillLight = new THREE.DirectionalLight(0xc8e0ff, 0.5)
+    fillLight.position.set(-4, 2, 2)
+    scene.add(fillLight)
+
+    const rimLight = new THREE.DirectionalLight(0xffffff, 0.35)
+    rimLight.position.set(0, 3, -4)
+    scene.add(rimLight)
+
+    // Shadow catcher
+    const shadowGeo = new THREE.PlaneGeometry(5, 5)
+    const shadowMat = new THREE.ShadowMaterial({ opacity: 0.12 })
+    const shadowPlane = new THREE.Mesh(shadowGeo, shadowMat)
+    shadowPlane.rotation.x = -Math.PI / 2
+    shadowPlane.position.y = -2.3
+    shadowPlane.receiveShadow = true
+    scene.add(shadowPlane)
+
+    // Body group
+    const bodyGroup = new THREE.Group()
+    scene.add(bodyGroup)
+
+    const sc = bmiScale * heightScale
+    const skinMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(style.skinTone),
+      roughness: 0.62,
+      metalness: 0.05,
+    })
+    const topMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(style.topColor),
+      roughness: 0.72,
+      metalness: 0.02,
+    })
+    const bottomMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(style.bottomColor),
+      roughness: 0.8,
+      metalness: 0.02,
+    })
+    const shoeMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(style.shoeColor),
+      roughness: 0.55,
+      metalness: 0.05,
+    })
+    const hairMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(style.hairColor),
+      roughness: 0.85,
+      metalness: 0.0,
+    })
+
+    function addMesh(geo: THREE.BufferGeometry, mat: THREE.Material, group: THREE.Group, x = 0, y = 0, z = 0) {
+      const mesh = new THREE.Mesh(geo, mat)
+      mesh.position.set(x, y, z)
+      mesh.castShadow = true
+      mesh.receiveShadow = true
+      group.add(mesh)
+      return mesh
+    }
+
+    // LEGS
+    const legR = (isMale ? 0.18 : 0.155) * sc
+    const legLen = 1.3 * heightScale
+    const legY = -0.85 * heightScale
+    const legGeo = new THREE.CapsuleGeometry(legR * 0.9, legLen - legR * 2, 6, 12)
+    addMesh(legGeo, bottomMat, bodyGroup, -legR * 1.3, legY, 0)
+    addMesh(legGeo.clone(), bottomMat, bodyGroup, legR * 1.3, legY, 0)
+
+    // SHOES
+    const shoeGeo = new THREE.SphereGeometry(legR * 1.3, 10, 8)
+    const leftShoe = new THREE.Mesh(shoeGeo, shoeMat)
+    leftShoe.scale.set(1.2, 0.48, 1.7)
+    leftShoe.position.set(-legR * 1.3, legY - legLen / 2 - 0.07, 0.08)
+    leftShoe.castShadow = true
+    bodyGroup.add(leftShoe)
+    const rightShoe = new THREE.Mesh(shoeGeo.clone(), shoeMat)
+    rightShoe.scale.set(1.2, 0.48, 1.7)
+    rightShoe.position.set(legR * 1.3, legY - legLen / 2 - 0.07, 0.08)
+    rightShoe.castShadow = true
+    bodyGroup.add(rightShoe)
+
+    // TORSO
+    const torsoW = (isMale ? 0.52 : 0.46) * sc
+    const torsoH = 1.05 * heightScale
+    const torsoD = 0.30 * sc
+    const torsoGeo = new THREE.CapsuleGeometry(Math.min(torsoW, torsoD) * 0.78, torsoH - torsoW * 1.5, 8, 16)
+    addMesh(torsoGeo, topMat, bodyGroup, 0, 0.5 * heightScale, 0)
+
+    // ARMS
+    const armR = (isMale ? 0.11 : 0.095) * sc
+    const armLen = 0.88 * heightScale
+    const shoulderY = 0.88 * heightScale
+    const leftArmGeo = new THREE.CapsuleGeometry(armR, armLen - armR * 2, 6, 10)
+    const rightArmGeo = new THREE.CapsuleGeometry(armR, armLen - armR * 2, 6, 10)
+    const leftPivot = new THREE.Group()
+    leftPivot.position.set(-torsoW * 0.88, shoulderY, 0)
+    leftPivot.rotation.z = 0.12
+    addMesh(leftArmGeo, skinMat, leftPivot, 0, -armLen / 2, 0)
+    bodyGroup.add(leftPivot)
+    const rightPivot = new THREE.Group()
+    rightPivot.position.set(torsoW * 0.88, shoulderY, 0)
+    rightPivot.rotation.z = -0.12
+    addMesh(rightArmGeo, skinMat, rightPivot, 0, -armLen / 2, 0)
+    bodyGroup.add(rightPivot)
+
+    // NECK
+    const neckGeo = new THREE.CylinderGeometry(0.095 * sc, 0.115 * sc, 0.17, 10)
+    addMesh(neckGeo, skinMat, bodyGroup, 0, 1.1 * heightScale, 0)
+
+    // HEAD
+    const headR = 0.40 * sc
+    const headGeo = new THREE.SphereGeometry(headR, 20, 16)
+    addMesh(headGeo, skinMat, bodyGroup, 0, 1.64 * heightScale, 0)
+
+    // HAIR
+    const hsc = sc
+    if (isFemale) {
+      // Long flowing hair
+      const hairTop = new THREE.SphereGeometry(headR * 1.06, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.58)
+      addMesh(hairTop, hairMat, bodyGroup, 0, 1.75 * heightScale, 0)
+      // Side strands
+      const strandGeo = new THREE.CylinderGeometry(0.075 * hsc, 0.055 * hsc, 0.75 * heightScale, 8)
+      const ls = new THREE.Mesh(strandGeo, hairMat)
+      ls.position.set(-headR * 0.88, 1.28 * heightScale, 0)
+      ls.rotation.z = 0.18
+      ls.castShadow = true
+      bodyGroup.add(ls)
+      const rs = new THREE.Mesh(strandGeo.clone(), hairMat)
+      rs.position.set(headR * 0.88, 1.28 * heightScale, 0)
+      rs.rotation.z = -0.18
+      rs.castShadow = true
+      bodyGroup.add(rs)
+    } else {
+      // Short hair cap
+      const hairTop = new THREE.SphereGeometry(headR * 1.02, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.53)
+      addMesh(hairTop, hairMat, bodyGroup, 0, 1.77 * heightScale, 0)
+    }
+
+    // EYES
+    const eyeY = 1.67 * heightScale
+    const eyeX = 0.155 * sc
+    const eyeR = headR * 0.135
+    const eyeGeo = new THREE.SphereGeometry(eyeR, 10, 10)
+    const eyeWMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.05, metalness: 0 })
+    const pupilMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.25, metalness: 0.1 })
+    const hlMat = new THREE.MeshBasicMaterial({ color: 0xffffff })
+    const hlGeo = new THREE.SphereGeometry(eyeR * 0.28, 6, 6)
+    addMesh(eyeGeo, eyeWMat, bodyGroup, -eyeX, eyeY, headR * 0.87)
+    addMesh(eyeGeo, eyeWMat, bodyGroup, eyeX, eyeY, headR * 0.87)
+    const pupilGeo = new THREE.SphereGeometry(eyeR * 0.65, 8, 8)
+    addMesh(pupilGeo, pupilMat, bodyGroup, -eyeX, eyeY, headR * 0.9)
+    addMesh(pupilGeo.clone(), pupilMat, bodyGroup, eyeX, eyeY, headR * 0.9)
+    addMesh(hlGeo, hlMat, bodyGroup, -eyeX + eyeR * 0.35, eyeY + eyeR * 0.4, headR * 0.92)
+    addMesh(hlGeo.clone(), hlMat, bodyGroup, eyeX + eyeR * 0.35, eyeY + eyeR * 0.4, headR * 0.92)
+
+    // MOUTH
+    const smileGeo = new THREE.TorusGeometry(0.075 * sc, 0.013 * sc, 6, 14, Math.PI)
+    const smileMesh = new THREE.Mesh(smileGeo, new THREE.MeshStandardMaterial({ color: 0xe07070, roughness: 0.7 }))
+    smileMesh.position.set(0, 1.54 * heightScale, headR * 0.89)
+    smileMesh.rotation.x = Math.PI
+    bodyGroup.add(smileMesh)
+
+    // BLUSH
+    const blushGeo = new THREE.CircleGeometry(0.075 * sc, 12)
+    const blushMat = new THREE.MeshStandardMaterial({ color: 0xfca5a5, roughness: 0.9, transparent: true, opacity: 0.32 })
+    const lb = new THREE.Mesh(blushGeo, blushMat)
+    lb.position.set(-headR * 0.62, 1.6 * heightScale, headR * 0.86)
+    bodyGroup.add(lb)
+    const rb = new THREE.Mesh(blushGeo.clone(), blushMat)
+    rb.position.set(headR * 0.62, 1.6 * heightScale, headR * 0.86)
+    bodyGroup.add(rb)
+
+    bodyGroup.position.y = 0.1
+
+    // Animate
+    let frame = 0
+    const loop = () => {
+      frame++
+      if (!isRotating) {
+        bodyGroup.position.y = 0.1 + Math.sin(frame * 0.04) * 0.04
+      }
+      renderer.render(scene, camera)
+      sceneRef.current!.animFrame = requestAnimationFrame(loop)
+    }
+    loop()
+
+    sceneRef.current = { scene, camera, renderer, bodyGroup, animFrame: frame }
+
+    // Resize
+    const ro = new ResizeObserver(() => {
+      if (!container || !sceneRef.current) return
+      const nw = container.clientWidth
+      const nh = container.clientHeight
+      sceneRef.current.camera.aspect = nw / nh
+      sceneRef.current.camera.updateProjectionMatrix()
+      sceneRef.current.renderer.setSize(nw, nh)
+    })
+    ro.observe(container)
+
+    return () => {
+      ro.disconnect()
+      cancelAnimationFrame(frame)
+      renderer.dispose()
+      if (container.contains(renderer.domElement)) container.removeChild(renderer.domElement)
+    }
+  }, []) // mount only
+
+  // Update colors on style change
+  useEffect(() => {
+    if (!sceneRef.current) return
+    const { bodyGroup } = sceneRef.current
+    bodyGroup.traverse((child) => {
+      if (!(child instanceof THREE.Mesh)) return
+      const m = child.material as THREE.MeshStandardMaterial
+      if (!m.isMeshStandardMaterial) return
+      const r = child.geometry.boundingSphere?.radius ?? 0.3
+      if (r > 0.38 && r < 0.45) m.color.set(style.skinTone)
+      else if (r > 0.15 && r < 0.38 && child.position.y > 0.3) m.color.set(style.topColor)
+      else if (r > 0.15 && r < 0.38 && child.position.y < -0.4) m.color.set(style.bottomColor)
+      else if (r > 0.05 && r < 0.14 && child.position.y > 1.2) m.color.set(style.hairColor)
+      else if (r > 0.05 && r < 0.14 && child.position.y < -1.5) m.color.set(style.shoeColor)
+      m.needsUpdate = true
+    })
+  }, [style])
+
+  // Rotation
+  useEffect(() => {
+    if (!sceneRef.current) return
+    sceneRef.current.bodyGroup.rotation.y = (rotation * Math.PI) / 180
+  }, [rotation])
+
   return (
     <div
-      className="relative flex items-center justify-center"
-      style={{
-        transform: `perspective(1200px) rotateY(${rotation}deg) scale(${isRotating ? 1.05 : 1})`,
-        transition: isRotating ? 'none' : 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
-        transformStyle: 'preserve-3d',
-      }}
-    >
-      {/* Outer glow aura */}
-      <div
-        className="absolute rounded-full pointer-events-none"
-        style={{
-          width: '220px',
-          height: '300px',
-          background: `radial-gradient(ellipse, ${style.topColor}30 0%, transparent 70%)`,
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -55%)',
-          filter: 'blur(24px)',
-        }}
-      />
-
-      {/* Stage spotlight */}
-      <div
-        className="absolute rounded-full pointer-events-none"
-        style={{
-          width: '180px',
-          height: '80px',
-          background: `radial-gradient(ellipse, ${style.topColor}20 0%, transparent 70%)`,
-          bottom: '0',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          filter: 'blur(16px)',
-        }}
-      />
-
-      {/* The actual AvatarBody SVG */}
-      <div
-        style={{
-          transform: `rotateX(5deg)`,
-          filter: `drop-shadow(0 30px 60px ${style.topColor}40) drop-shadow(0 0 20px ${style.topColor}30)`,
-        }}
-      >
-        <AvatarBody metrics={metrics} style={style} size={200} />
-      </div>
-
-      {/* Gender indicator badge */}
-      <div
-        className="absolute bottom-14 left-1/2 -translate-x-1/2 text-xs font-bold px-3 py-1.5 rounded-full shadow-xl z-30"
-        style={{
-          background: metrics.gender === 'female' ? '#ec4899' : metrics.gender === 'male' ? '#6366f1' : '#6b7280',
-          color: 'white',
-          border: '2px solid white',
-          fontSize: '11px',
-        }}
-      >
-        {metrics.gender === 'male' ? '👨 HOMBRE' : metrics.gender === 'female' ? '👩 MUJER' : '⚧️ OTRO'}
-      </div>
-    </div>
+      ref={mountRef}
+      className="w-full h-full"
+      style={{ minHeight: '340px' }}
+    />
   )
 }
 
 // ============================================================
-// Ready Player Me Modal (full-screen iframe)
-// Uses frameApi postMessage to receive avatar URL on completion
+// Ready Player Me Modal
 // ============================================================
 function ReadyPlayerMeModal({
   onClose,
@@ -114,39 +317,25 @@ function ReadyPlayerMeModal({
   onAvatarSelected: (url: string) => void
   subdomain: string
 }) {
-  const [iframeLoaded, setIframeLoaded] = useState(false)
-
-  // Listen for Ready Player Me frameApi messages
+  const [loaded, setLoaded] = useState(false)
   useEffect(() => {
-    const handler = (event: MessageEvent) => {
-      // Ready Player Me sends messages with this structure
+    const handler = (e: MessageEvent) => {
       try {
-        const data = event.data
-        if (data?.source === 'readyplayerme' && data?.eventName === 'v1.avatar.exported') {
-          // User exported their avatar — data.url contains the .glb URL
-          const avatarUrl = data.data?.modelUrl || data.url
-          if (avatarUrl) {
-            onAvatarSelected(avatarUrl)
-            onClose()
-          }
+        if (e.data?.source === 'readyplayerme' && e.data?.eventName === 'v1.avatar.exported') {
+          const url = e.data.data?.modelUrl || e.data.url
+          if (url) { onAvatarSelected(url); onClose() }
         }
       } catch {}
     }
-
     window.addEventListener('message', handler)
     return () => window.removeEventListener('message', handler)
   }, [onAvatarSelected, onClose])
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}
-    >
-      <div
-        className="relative bg-white rounded-3xl shadow-2xl w-full max-w-3xl mx-4 overflow-hidden"
-        style={{ height: 'min(620px, 85vh)' }}
-      >
-        {/* Window header */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center"
+      style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}>
+      <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-3xl mx-4 overflow-hidden"
+        style={{ height: 'min(620px, 85vh)' }}>
         <div className="flex items-center justify-between px-5 py-4 border-b bg-gradient-to-r from-indigo-600 to-violet-600">
           <div className="flex items-center gap-3">
             <div className="flex gap-2">
@@ -154,50 +343,32 @@ function ReadyPlayerMeModal({
               <div className="w-3 h-3 rounded-full bg-yellow-400" />
               <div className="w-3 h-3 rounded-full bg-green-400" />
             </div>
-            <span className="text-white/80 text-sm font-medium">Crear tu NutriAvatar 3D</span>
+            <span className="text-white/80 text-sm font-medium">Crear tu VibeAvatar 3D</span>
           </div>
           <div className="flex items-center gap-3">
-            <a
-              href="https://readyplayer.me"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-white/60 hover:text-white transition-colors"
-              title="Abrir Ready Player Me"
-            >
+            <a href="https://readyplayer.me" target="_blank" rel="noopener noreferrer"
+              className="text-white/60 hover:text-white transition-colors">
               <ExternalLink className="w-4 h-4" />
             </a>
-            <button
-              onClick={onClose}
-              className="text-white/80 hover:text-white text-xl font-light leading-none"
-            >
-              ×
-            </button>
+            <button onClick={onClose} className="text-white/80 hover:text-white text-xl font-light leading-none">×</button>
           </div>
         </div>
-
-        {/* Loading state */}
-        {!iframeLoaded && (
+        {!loaded && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-white z-10">
             <Loader2 className="w-12 h-12 text-indigo-500 animate-spin mb-4" />
-            <p className="text-muted-foreground text-sm">Cargando NutriAvatar 3D...</p>
-            <p className="text-muted-foreground/60 text-xs mt-1">
-              Personaliza tu avatar y presiona "Exportar"
-            </p>
+            <p className="text-muted-foreground text-sm">Cargando VibeAvatar 3D...</p>
+            <p className="text-muted-foreground/60 text-xs mt-1">Personaliza tu avatar y presiona "Exportar"</p>
           </div>
         )}
-
-        {/* RPM Iframe — usa ?frameApi para comunicación postMessage */}
         <iframe
           src={`https://${subdomain}.readyplayer.me/avatar?frameApi`}
           className="w-full h-full border-none"
           style={{ height: 'calc(100% - 60px)' }}
           allow="camera; fullscreen; xr-spatial-tracking"
           allowFullScreen
-          onLoad={() => setIframeLoaded(true)}
+          onLoad={() => setLoaded(true)}
           title="Creador de Avatar 3D — Ready Player Me"
         />
-
-        {/* Footer hint */}
         <div className="absolute bottom-0 left-0 right-0 py-2 px-4 bg-gray-50 border-t text-center">
           <p className="text-[11px] text-muted-foreground">
             Cuando termines, presiona <strong>Exportar</strong> — tu avatar se guardará automáticamente
@@ -209,15 +380,15 @@ function ReadyPlayerMeModal({
 }
 
 // ============================================================
-// model-viewer 3D fallback (cuando se tiene URL del modelo GLB)
+// model-viewer fallback (RPM GLB)
 // ============================================================
 function AvatarModelViewer({ glbUrl }: { glbUrl: string }) {
   return (
     <div className="relative flex items-center justify-center w-full h-full">
-      {/* @ts-ignore — model-viewer is a custom element */}
+      {/* @ts-ignore */}
       <model-viewer
         src={glbUrl}
-        alt="Tu NutriAvatar 3D"
+        alt="Tu VibeAvatar 3D"
         camera-controls
         auto-rotate
         rotation-per-second="20deg"
@@ -238,7 +409,7 @@ function AvatarModelViewer({ glbUrl }: { glbUrl: string }) {
 }
 
 // ============================================================
-// Main Avatar3DViewer Component
+// Main Avatar3DViewer
 // ============================================================
 export default function Avatar3DViewer({
   metrics,
@@ -246,43 +417,40 @@ export default function Avatar3DViewer({
   isRotating,
   showClothes,
   showProgress,
-}: Avatar3DViewerProps) {
+}: {
+  metrics: BodyMetrics
+  style: AvatarStyle
+  isRotating?: boolean
+  showClothes?: boolean
+  showProgress?: boolean
+}) {
   const [rotation, setRotation] = useState(0)
-  const [showRPMModal, setShowRPMModal] = useState(false)
-  const [avatarGlbUrl, setAvatarGlbUrl] = useState<string | null>(null)
+  const [showRPM, setShowRPM] = useState(false)
+  const [glbUrl, setGlbUrl] = useState<string | null>(null)
 
-  // Listen for postMessage from RPM modal
-  const handleAvatarSelected = useCallback((url: string) => {
-    setAvatarGlbUrl(url)
-  }, [])
+  const onAvatarSelected = useCallback((url: string) => setGlbUrl(url), [])
 
-  // Rotation animation
   useEffect(() => {
     if (!isRotating) return
     let frame = 0
     const interval = setInterval(() => {
       frame++
       setRotation(frame * 10)
-      if (frame >= 36) {
-        clearInterval(interval)
-        setRotation(0)
-      }
+      if (frame >= 36) { clearInterval(interval); setRotation(0) }
     }, 50)
     return () => clearInterval(interval)
   }, [isRotating])
 
   return (
     <div className="relative flex flex-col" style={{ minHeight: '400px' }}>
-      {/* RPM Modal */}
-      {showRPMModal && (
+      {showRPM && (
         <ReadyPlayerMeModal
           subdomain={READY_PLAYER_ME_SUBDOMAIN}
-          onClose={() => setShowRPMModal(false)}
-          onAvatarSelected={handleAvatarSelected}
+          onClose={() => setShowRPM(false)}
+          onAvatarSelected={onAvatarSelected}
         />
       )}
 
-      {/* Viewport / Canvas area */}
       <div
         className="relative flex-1 flex items-center justify-center overflow-hidden rounded-t-2xl"
         style={{
@@ -290,47 +458,35 @@ export default function Avatar3DViewer({
           minHeight: '360px',
         }}
       >
-        {/* Studio ambient glow */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse 80% 70% at 50% 30%, rgba(139,92,246,0.05) 0%, transparent 60%)' }}
-        />
+        <div className="absolute inset-0 pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse 80% 70% at 50% 30%, rgba(139,92,246,0.05) 0%, transparent 60%)' }} />
+        <div className="absolute inset-0 pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse 55% 55% at 50% 25%, rgba(255,255,255,0.85) 0%, transparent 65%)' }} />
 
-        {/* Studio spotlight from top */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse 55% 55% at 50% 25%, rgba(255,255,255,0.85) 0%, transparent 65%)' }}
-        />
-
-        {/* Avatar content */}
         <div className="relative z-10 flex flex-col items-center justify-center w-full h-full">
-          {avatarGlbUrl ? (
-            // model-viewer con modelo GLB real exportado de RPM
-            <AvatarModelViewer glbUrl={avatarGlbUrl} />
+          {glbUrl ? (
+            <AvatarModelViewer glbUrl={glbUrl} />
           ) : (
-            // Full-body SVG avatar con silueta correcta por género
-            <AvatarDisplaySVG
+            <Avatar3DRenderer
               metrics={metrics}
               style={style}
-              isRotating={isRotating ?? false}
               rotation={rotation}
+              isRotating={isRotating ?? false}
             />
           )}
         </div>
 
-        {/* Badge */}
         <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg z-20">
           <span>TU AVATAR</span>
           <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
         </div>
 
-        {/* Open in RPM button */}
         <button
-          onClick={() => setShowRPMModal(true)}
+          onClick={() => setShowRPM(true)}
           className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 bg-white/90 backdrop-blur-sm text-indigo-600 text-xs font-semibold px-4 py-2 rounded-full shadow-lg border border-indigo-100 hover:bg-white hover:shadow-xl transition-all flex items-center gap-2"
         >
           <Maximize2 className="w-3.5 h-3.5" />
-          {avatarGlbUrl ? 'Editar en Ready Player Me' : 'Crear avatar 3D'}
+          {glbUrl ? 'Editar en Ready Player Me' : 'Crear avatar 3D'}
         </button>
       </div>
     </div>

@@ -281,7 +281,7 @@ export default function SiteHeader({ user }: SiteHeaderProps) {
           <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
             <Leaf className="w-4.5 h-4.5 text-primary" />
           </div>
-          <span className="font-display font-bold text-lg">NutriGuía</span>
+          <span className="font-display font-bold text-lg">NutriVibe</span>
         </div>
 
         {/* Nav + Account */}

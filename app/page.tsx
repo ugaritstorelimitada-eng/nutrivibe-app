@@ -122,7 +122,7 @@ export default function Home() {
         <div className="max-w-5xl mx-auto px-4">
           <div className="text-center mb-8">
             <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight mb-3">
-              Conversa con NutriGuía
+              Conversa con NutriVibe
             </h2>
             <p className="text-muted-foreground text-lg max-w-xl mx-auto">
               {profile
