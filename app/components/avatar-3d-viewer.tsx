@@ -1,270 +1,404 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Maximize2, ExternalLink, Loader2 } from 'lucide-react'
 import type { BodyMetrics, AvatarStyle } from './avatar-customizer'
-import type * as T from 'three'
 
 const READY_PLAYER_ME_SUBDOMAIN = 'nutriguia'
 
 // ============================================================
-// Three.js Avatar Renderer — fully dynamic to avoid SSR crashes
+// High-quality SVG Avatar — stylized Pixar/Memoji look
+// Body proportions respond to gender, weight (BMI), height
 // ============================================================
-function Avatar3DRenderer({ metrics, style, rotation, isRotating }: {
+function VibeAvatar({ metrics, style }: {
   metrics: BodyMetrics
   style: AvatarStyle
-  rotation: number
-  isRotating: boolean
 }) {
-  const mountRef = useRef<HTMLDivElement>(null)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sceneRef = useRef<{ scene: any; camera: any; renderer: any; bodyGroup: any; animFrame: number } | null>(null)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const threeRef = useRef<any>(null)
-
   const isFemale = metrics.gender === 'female'
   const isMale = metrics.gender === 'male'
+
+  // BMI-based scale: wider body for higher BMI
   const bmi = metrics.weight / Math.pow(metrics.height / 100, 2)
-  const bmiScale = bmi < 18.5 ? 0.85 : bmi < 25 ? 1.0 : bmi < 30 ? 1.15 : 1.3
-  const heightScale = metrics.height / 170
+  const bmiScale = bmi < 18.5 ? 0.82 : bmi < 25 ? 1.0 : bmi < 30 ? 1.18 : 1.35
 
-  useEffect(() => {
-    if (!mountRef.current) return
-    const container = mountRef.current
-    let cancelled = false
-    let cleanup: (() => void) | undefined
+  // Height-based overall scale (head + body)
+  const heightScale = 0.75 + (metrics.height / 210) * 0.35
 
-    async function init() {
-      // Dynamic import — runs only in browser
-      const THREE = await import('three')
-      if (cancelled || !mountRef.current) return
-      threeRef.current = THREE
+  // Proportions
+  const W = 240 * heightScale
+  const H = 340 * heightScale
+  const cx = W / 2
 
-      const w = container.clientWidth || 300
-      const h = container.clientHeight || 380
+  // Body widths
+  const torsoW = (isFemale ? 42 : 50) * bmiScale
+  const hipW = (isFemale ? 58 : 40) * bmiScale
+  const armW = (isMale ? 14 : 11) * bmiScale
+  const legW = (isMale ? 18 : 14) * bmiScale
+  const torsoH = 85
+  const neckH = 16
 
-      const scene = new THREE.Scene()
-      const camera = new THREE.PerspectiveCamera(40, w / h, 0.1, 100)
-      camera.position.set(0, 0, 6)
-      camera.lookAt(0, 0, 0)
+  // Y positions (top-down, SVG coords)
+  const headY = 40 * heightScale
+  const headR = 36 * heightScale
+  const neckY = headY + headR + neckH / 2
+  const torsoY = neckY + neckH / 2 + torsoH / 2
+  const hipY = torsoY + torsoH / 2
+  const legLen = 100 * heightScale
+  const legY = hipY + 8
+  const shoeY = legY + legLen
 
-      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
-      renderer.setSize(w, h)
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-      renderer.shadowMap.enabled = true
-      renderer.shadowMap.type = THREE.PCFSoftShadowMap
-      renderer.outputColorSpace = THREE.SRGBColorSpace
-      renderer.toneMapping = THREE.ACESFilmicToneMapping
-      renderer.toneMappingExposure = 1.1
-      container.appendChild(renderer.domElement)
+  // Colors
+  const skin = style.skinTone
+  const hairC = style.hairColor
+  const topC = style.topColor
+  const bottomC = style.bottomColor
+  const shoeC = style.shoeColor
+  const dressC = isFemale ? '#ec4899' : bottomC
 
-      // Lights
-      scene.add(new THREE.AmbientLight(0xffffff, 0.65))
-      const keyLight = new THREE.DirectionalLight(0xfff4e0, 1.5)
-      keyLight.position.set(3, 5, 4)
-      keyLight.castShadow = true
-      keyLight.shadow.mapSize.setScalar(1024)
-      keyLight.shadow.camera.near = 0.5
-      keyLight.shadow.camera.far = 20
-      scene.add(keyLight)
-      const fillLight = new THREE.DirectionalLight(0xc8e0ff, 0.5)
-      fillLight.position.set(-4, 2, 2)
-      scene.add(fillLight)
-      const rimLight = new THREE.DirectionalLight(0xffffff, 0.35)
-      rimLight.position.set(0, 3, -4)
-      scene.add(rimLight)
+  // Skin gradient
+  const skinHex = skin
+  const skinGradId = 'skinG'
+  const topGradId = 'topG'
+  const dressGradId = 'dressG'
+  const pantsGradId = 'pantsG'
+  const hairGradId = 'hairG'
 
-      // Shadow plane
-      const shadowPlane = new THREE.Mesh(new THREE.PlaneGeometry(5, 5), new THREE.ShadowMaterial({ opacity: 0.12 }))
-      shadowPlane.rotation.x = -Math.PI / 2
-      shadowPlane.position.y = -2.3
-      shadowPlane.receiveShadow = true
-      scene.add(shadowPlane)
+  return (
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      width={W}
+      height={H}
+      style={{ filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.18))', maxWidth: '100%' }}
+    >
+      <defs>
+        {/* Skin gradient — subtle lighting */}
+        <radialGradient id={skinGradId} cx="38%" cy="28%" r="72%">
+          <stop offset="0%" stopColor={skin} stopOpacity="1" />
+          <stop offset="100%" stopColor={skin} stopOpacity="0.78" />
+        </radialGradient>
+        {/* Top gradient */}
+        <linearGradient id={topGradId} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor={topC} stopOpacity="1" />
+          <stop offset="100%" stopColor={topC} stopOpacity="0.75" />
+        </linearGradient>
+        {/* Dress gradient (female) */}
+        <linearGradient id={dressGradId} x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor={dressC} stopOpacity="1" />
+          <stop offset="100%" stopColor={dressC} stopOpacity="0.8" />
+        </linearGradient>
+        {/* Pants gradient */}
+        <linearGradient id={pantsGradId} x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor={bottomC} stopOpacity="1" />
+          <stop offset="100%" stopColor={bottomC} stopOpacity="0.75" />
+        </linearGradient>
+        {/* Hair gradient */}
+        <linearGradient id={hairGradId} x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor={hairC} stopOpacity="1" />
+          <stop offset="100%" stopColor={hairC} stopOpacity="0.7" />
+        </linearGradient>
+        {/* Soft shadow */}
+        <filter id="softShadow">
+          <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#000" floodOpacity="0.12" />
+        </filter>
+      </defs>
 
-      const bodyGroup = new THREE.Group()
-      scene.add(bodyGroup)
-      const sc = bmiScale * heightScale
+      {/* ── Ground shadow ── */}
+      <ellipse cx={cx} cy={shoeY + 8} rx={hipW * 1.2} ry="8" fill="rgba(0,0,0,0.15)" />
 
-      const skinMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(style.skinTone), roughness: 0.62, metalness: 0.05 })
-      const topMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(style.topColor), roughness: 0.72, metalness: 0.02 })
-      const bottomMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(style.bottomColor), roughness: 0.8, metalness: 0.02 })
-      const shoeMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(style.shoeColor), roughness: 0.55, metalness: 0.05 })
-      const hairMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(style.hairColor), roughness: 0.85, metalness: 0.0 })
+      {/* ══════════════════════════════════════ */}
+      {/* LOWER BODY — dress (female) / pants  */}
+      {/* ══════════════════════════════════════ */}
 
-      function addMesh(geo: T.BufferGeometry, mat: T.Material, group: T.Group, x = 0, y = 0, z = 0) {
-        const m = new THREE.Mesh(geo, mat)
-        m.position.set(x, y, z)
-        m.castShadow = true
-        m.receiveShadow = true
-        group.add(m)
-      }
+      {isFemale ? (
+        /* ── DRESS ── */
+        <>
+          {/* Dress body — A-line silhouette */}
+          <path
+            d={`M${cx - torsoW * 0.9} ${torsoY - torsoH * 0.45}
+               Q${cx - torsoW * 0.85} ${hipY - 5} ${cx - hipW} ${shoeY - 5}
+               L${cx + hipW} ${shoeY - 5}
+               Q${cx + torsoW * 0.85} ${hipY - 5} ${cx + torsoW * 0.9} ${torsoY - torsoH * 0.45}
+               Z`}
+            fill={`url(#${dressGradId})`}
+          />
+          {/* Dress bodice overlay */}
+          <path
+            d={`M${cx - torsoW * 0.85} ${torsoY - torsoH * 0.45}
+               L${cx - torsoW * 0.75} ${torsoY - torsoH * 0.1}
+               L${cx + torsoW * 0.75} ${torsoY - torsoH * 0.1}
+               L${cx + torsoW * 0.85} ${torsoY - torsoH * 0.45}
+               Q${cx} ${torsoY - torsoH * 0.35} ${cx - torsoW * 0.85} ${torsoY - torsoH * 0.45} Z`}
+            fill={topC}
+            opacity="0.9"
+          />
+          {/* Dress ruffle at hem */}
+          <path
+            d={`M${cx - hipW} ${shoeY - 10} Q${cx} ${shoeY} ${cx + hipW} ${shoeY - 10}`}
+            stroke="rgba(255,255,255,0.25)" strokeWidth="3" fill="none"
+          />
+          {/* Dress center fold */}
+          <path d={`M${cx} ${torsoY - torsoH * 0.3} L${cx} ${shoeY - 12}`}
+            stroke="rgba(0,0,0,0.07)" strokeWidth="1.5" fill="none" />
+          {/* Shoes */}
+          <ellipse cx={cx - 14} cy={shoeY - 3} rx="12" ry="6" fill={shoeC} />
+          <ellipse cx={cx + 14} cy={shoeY - 3} rx="12" ry="6" fill={shoeC} />
+          {/* Shoe highlights */}
+          <ellipse cx={cx - 14} cy={shoeY - 6} rx="6" ry="2.5" fill="rgba(255,255,255,0.18)" />
+          <ellipse cx={cx + 14} cy={shoeY - 6} rx="6" ry="2.5" fill="rgba(255,255,255,0.18)" />
+        </>
+      ) : (
+        /* ── PANTS ── */
+        <>
+          {/* Left leg */}
+          <rect
+            x={cx - legW * 1.8} y={legY}
+            width={legW} height={legLen}
+            rx={legW / 2} fill={`url(#${pantsGradId})`}
+          />
+          {/* Right leg */}
+          <rect
+            x={cx + legW * 0.8} y={legY}
+            width={legW} height={legLen}
+            rx={legW / 2} fill={`url(#${pantsGradId})`}
+          />
+          {/* Leg crease highlights */}
+          <rect x={cx - legW * 1.8 + 2} y={legY + 4} width="2.5" height={legLen - 8} rx="1.25" fill="rgba(255,255,255,0.1)" />
+          <rect x={cx + legW * 0.8 + 2} y={legY + 4} width="2.5" height={legLen - 8} rx="1.25" fill="rgba(255,255,255,0.1)" />
+          {/* Shoes */}
+          <path
+            d={`M${cx - legW * 1.8 - 2} ${shoeY}
+               Q${cx - legW * 1.8 - legW / 2} ${shoeY - 8} ${cx - legW / 2 + 10} ${shoeY}
+               L${cx + 14} ${shoeY}
+               Q${cx + legW * 1.8 + legW / 2 + 2} ${shoeY + 5} ${cx + legW * 1.8 + 4} ${shoeY + 10}
+               L${cx - legW * 1.8 - 5} ${shoeY + 10}
+               Q${cx - legW * 1.8 - 4} ${shoeY + 5} ${cx - legW * 1.8 - 2} ${shoeY}Z`}
+            fill={shoeC}
+          />
+          <path
+            d={`M${cx + legW * 0.8 + 1} ${shoeY}
+               Q${cx + legW * 0.8 + legW / 2} ${shoeY - 8} ${cx + legW * 0.8 + legW + 10} ${shoeY}
+               L${cx + legW * 1.8 + 14} ${shoeY}
+               Q${cx + legW * 1.8 + legW + 16} ${shoeY + 5} ${cx + legW * 1.8 + 14} ${shoeY + 10}
+               L${cx + legW * 0.8 - 4} ${shoeY + 10}
+               Q${cx + legW * 0.8} ${shoeY + 5} ${cx + legW * 0.8 + 1} ${shoeY}Z`}
+            fill={shoeC}
+          />
+          {/* Shoe highlights */}
+          <ellipse cx={cx - legW * 1.0} cy={shoeY - 2} rx="5" ry="2.5" fill="rgba(255,255,255,0.15)" />
+          <ellipse cx={cx + legW * 1.4} cy={shoeY - 2} rx="5" ry="2.5" fill="rgba(255,255,255,0.15)" />
+        </>
+      )}
 
-      // LEGS
-      const legR = (isMale ? 0.18 : 0.155) * sc
-      const legLen = 1.3 * heightScale
-      const legY = -0.85 * heightScale
-      const legGeo = new THREE.CapsuleGeometry(legR * 0.9, legLen - legR * 2, 6, 12)
-      addMesh(legGeo, bottomMat, bodyGroup, -legR * 1.3, legY, 0)
-      addMesh(legGeo.clone(), bottomMat, bodyGroup, legR * 1.3, legY, 0)
+      {/* ── Torso shadow ── */}
+      <rect
+        x={cx - torsoW - 1} y={torsoY - torsoH / 2 + 2}
+        width={torsoW * 2 + 2} height={torsoH - 2}
+        rx="12" fill="rgba(0,0,0,0.08)"
+      />
 
-      // SHOES
-      const shoeGeo = new THREE.SphereGeometry(legR * 1.3, 10, 8)
-      const ls = new THREE.Mesh(shoeGeo, shoeMat)
-      ls.scale.set(1.2, 0.48, 1.7)
-      ls.position.set(-legR * 1.3, legY - legLen / 2 - 0.07, 0.08)
-      ls.castShadow = true
-      bodyGroup.add(ls)
-      const rs = new THREE.Mesh(shoeGeo.clone(), shoeMat)
-      rs.scale.set(1.2, 0.48, 1.7)
-      rs.position.set(legR * 1.3, legY - legLen / 2 - 0.07, 0.08)
-      rs.castShadow = true
-      bodyGroup.add(rs)
+      {/* ── Torso / Top ── */}
+      <rect
+        x={cx - torsoW} y={torsoY - torsoH / 2}
+        width={torsoW * 2} height={torsoH}
+        rx="10" fill={`url(#${topGradId})`}
+      />
+      {/* Top highlight strip */}
+      <rect
+        x={cx - torsoW + 5} y={torsoY - torsoH / 2 + 4}
+        width="9" height={torsoH - 8}
+        rx="4.5" fill="rgba(255,255,255,0.2)"
+      />
+      {/* Collar V */}
+      <path
+        d={`M${cx - 9} ${torsoY - torsoH / 2 + 3} L${cx} ${torsoY - torsoH / 2 + 16} L${cx + 9} ${torsoY - torsoH / 2 + 3}`}
+        stroke="rgba(255,255,255,0.3)" strokeWidth="2" fill="rgba(255,255,255,0.06)"
+      />
+      {/* Heart / logo badge */}
+      <circle cx={cx} cy={torsoY + 8} r="7" fill="rgba(255,255,255,0.15)" />
+      <path d={`M${cx - 3} ${torsoY + 8} L${cx} ${torsoY + 5.5} L${cx + 3} ${torsoY + 8} L${cx} ${torsoY + 11.5}Z`}
+        fill="white" opacity="0.75" />
 
-      // TORSO
-      const torsoW = (isMale ? 0.52 : 0.46) * sc
-      const torsoH = 1.05 * heightScale
-      const torsoD = 0.30 * sc
-      addMesh(new THREE.CapsuleGeometry(Math.min(torsoW, torsoD) * 0.78, torsoH - torsoW * 1.5, 8, 16), topMat, bodyGroup, 0, 0.5 * heightScale, 0)
+      {/* ── Arms ── */}
+      {/* Left arm */}
+      <rect
+        x={cx - torsoW - armW} y={torsoY - torsoH / 2 + 4}
+        width={armW} height={torsoH * 0.65}
+        rx={armW / 2} fill={`url(#${skinGradId})`}
+      />
+      {/* Left hand */}
+      <circle cx={cx - torsoW - armW / 2} cy={torsoY - torsoH / 2 + torsoH * 0.65 + armW * 0.4} r={armW * 0.9} fill={`url(#${skinGradId})`} />
+      {/* Right arm */}
+      <rect
+        x={cx + torsoW} y={torsoY - torsoH / 2 + 4}
+        width={armW} height={torsoH * 0.65}
+        rx={armW / 2} fill={`url(#${skinGradId})`}
+      />
+      {/* Right hand */}
+      <circle cx={cx + torsoW + armW / 2} cy={torsoY - torsoH / 2 + torsoH * 0.65 + armW * 0.4} r={armW * 0.9} fill={`url(#${skinGradId})`} />
 
-      // ARMS
-      const armR = (isMale ? 0.11 : 0.095) * sc
-      const armLen = 0.88 * heightScale
-      const shoulderY = 0.88 * heightScale
-      const leftPivot = new THREE.Group()
-      leftPivot.position.set(-torsoW * 0.88, shoulderY, 0)
-      leftPivot.rotation.z = 0.12
-      addMesh(new THREE.CapsuleGeometry(armR, armLen - armR * 2, 6, 10), skinMat, leftPivot, 0, -armLen / 2, 0)
-      bodyGroup.add(leftPivot)
-      const rightPivot = new THREE.Group()
-      rightPivot.position.set(torsoW * 0.88, shoulderY, 0)
-      rightPivot.rotation.z = -0.12
-      addMesh(new THREE.CapsuleGeometry(armR, armLen - armR * 2, 6, 10), skinMat, rightPivot, 0, -armLen / 2, 0)
-      bodyGroup.add(rightPivot)
+      {/* ── Neck ── */}
+      <rect
+        x={cx - 13 * heightScale} y={neckY - neckH / 2}
+        width={26 * heightScale} height={neckH}
+        rx="6" fill={`url(#${skinGradId})`}
+      />
 
-      // NECK
-      addMesh(new THREE.CylinderGeometry(0.095 * sc, 0.115 * sc, 0.17, 10), skinMat, bodyGroup, 0, 1.1 * heightScale, 0)
+      {/* ── Head ── */}
+      <circle cx={cx} cy={headY} r={headR} fill={`url(#${skinGradId})`} />
 
-      // HEAD
-      const headR = 0.40 * sc
-      addMesh(new THREE.SphereGeometry(headR, 20, 16), skinMat, bodyGroup, 0, 1.64 * heightScale, 0)
+      {/* ── HAIR ── */}
+      {isFemale ? (
+        /* Long hair — volume + strands */
+        <>
+          {/* Top dome */}
+          <path
+            d={`M${cx - headR * 0.92} ${headY}
+               Q${cx - headR * 0.8} ${headY - headR * 1.05} ${cx} ${headY - headR * 1.12}
+               Q${cx + headR * 0.8} ${headY - headR * 1.05} ${cx + headR * 0.92} ${headY}
+               Q${cx + headR * 0.7} ${headY - headR * 0.5} ${cx} ${headY - headR * 0.8}
+               Q${cx - headR * 0.7} ${headY - headR * 0.5} ${cx - headR * 0.92} ${headY} Z`}
+            fill={hairC}
+          />
+          {/* Hair highlight */}
+          <path
+            d={`M${cx - headR * 0.5} ${headY - headR * 0.9}
+               Q${cx} ${headY - headR * 1.05} ${cx + headR * 0.5} ${headY - headR * 0.9}`}
+            stroke="rgba(255,255,255,0.2)" strokeWidth="2.5" fill="none"
+          />
+          {/* Left side strand */}
+          <path
+            d={`M${cx - headR * 0.85} ${headY - headR * 0.3}
+               Q${cx - headR * 1.1} ${headY + headR * 0.2} ${cx - headR * 1.0} ${hipY - torsoH * 0.4}
+               Q${cx - headR * 0.9} ${hipY} ${cx - headR * 0.75} ${torsoY - torsoH * 0.45}`}
+            stroke={hairC} strokeWidth={headR * 0.45} fill="none"
+            strokeLinecap="round"
+          />
+          {/* Right side strand */}
+          <path
+            d={`M${cx + headR * 0.85} ${headY - headR * 0.3}
+               Q${cx + headR * 1.1} ${headY + headR * 0.2} ${cx + headR * 1.0} ${hipY - torsoH * 0.4}
+               Q${cx + headR * 0.9} ${hipY} ${cx + headR * 0.75} ${torsoY - torsoH * 0.45}`}
+            stroke={hairC} strokeWidth={headR * 0.45} fill="none"
+            strokeLinecap="round"
+          />
+        </>
+      ) : (
+        /* Short hair — practical cut */
+        <>
+          <path
+            d={`M${cx - headR * 0.9} ${headY}
+               Q${cx - headR * 0.78} ${headY - headR * 1.02} ${cx} ${headY - headR * 1.08}
+               Q${cx + headR * 0.78} ${headY - headR * 1.02} ${cx + headR * 0.9} ${headY}
+               Q${cx + headR * 0.65} ${headY - headR * 0.55} ${cx} ${headY - headR * 0.75}
+               Q${cx - headR * 0.65} ${headY - headR * 0.55} ${cx - headR * 0.9} ${headY} Z`}
+            fill={hairC}
+          />
+          {/* Hair highlight */}
+          <path
+            d={`M${cx - headR * 0.5} ${headY - headR * 0.88}
+               Q${cx} ${headY - headR * 1.0} ${cx + headR * 0.5} ${headY - headR * 0.88}`}
+            stroke="rgba(255,255,255,0.18)" strokeWidth="2" fill="none"
+          />
+        </>
+      )}
 
-      // HAIR
-      if (isFemale) {
-        addMesh(new THREE.SphereGeometry(headR * 1.06, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.58), hairMat, bodyGroup, 0, 1.75 * heightScale, 0)
-        const strandGeo = new THREE.CylinderGeometry(0.075 * sc, 0.055 * sc, 0.75 * heightScale, 8)
-        const ls2 = new THREE.Mesh(strandGeo, hairMat)
-        ls2.position.set(-headR * 0.88, 1.28 * heightScale, 0)
-        ls2.rotation.z = 0.18
-        ls2.castShadow = true
-        bodyGroup.add(ls2)
-        const rs2 = new THREE.Mesh(strandGeo.clone(), hairMat)
-        rs2.position.set(headR * 0.88, 1.28 * heightScale, 0)
-        rs2.rotation.z = -0.18
-        rs2.castShadow = true
-        bodyGroup.add(rs2)
-      } else {
-        addMesh(new THREE.SphereGeometry(headR * 1.02, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.53), hairMat, bodyGroup, 0, 1.77 * heightScale, 0)
-      }
+      {/* ── EARS ── */}
+      <ellipse cx={cx - headR - 1} cy={headY + 2} rx="5" ry="6" fill={`url(#${skinGradId})`} />
+      <ellipse cx={cx + headR + 1} cy={headY + 2} rx="5" ry="6" fill={`url(#${skinGradId})`} />
+      {/* Female earrings — gold hoops */}
+      {isFemale && (
+        <>
+          <circle cx={cx - headR - 4} cy={headY + 7} r="4" fill="#fbbf24" />
+          <circle cx={cx - headR - 4} cy={headY + 7} r="2" fill={dressC} />
+          <circle cx={cx + headR + 4} cy={headY + 7} r="4" fill="#fbbf24" />
+          <circle cx={cx + headR + 4} cy={headY + 7} r="2" fill={dressC} />
+        </>
+      )}
 
-      // EYES
-      const eyeY = 1.67 * heightScale
-      const eyeX = 0.155 * sc
-      const eyeR = headR * 0.135
-      const eyeWMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.05, metalness: 0 })
-      const pupilMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.25, metalness: 0.1 })
-      const hlMat = new THREE.MeshBasicMaterial({ color: 0xffffff })
-      const eyeGeo = new THREE.SphereGeometry(eyeR, 10, 10)
-      const hlGeo = new THREE.SphereGeometry(eyeR * 0.28, 6, 6)
-      addMesh(eyeGeo, eyeWMat, bodyGroup, -eyeX, eyeY, headR * 0.87)
-      addMesh(eyeGeo, eyeWMat, bodyGroup, eyeX, eyeY, headR * 0.87)
-      addMesh(new THREE.SphereGeometry(eyeR * 0.65, 8, 8), pupilMat, bodyGroup, -eyeX, eyeY, headR * 0.9)
-      addMesh(new THREE.SphereGeometry(eyeR * 0.65, 8, 8), pupilMat, bodyGroup, eyeX, eyeY, headR * 0.9)
-      addMesh(hlGeo, hlMat, bodyGroup, -eyeX + eyeR * 0.35, eyeY + eyeR * 0.4, headR * 0.92)
-      addMesh(hlGeo.clone(), hlMat, bodyGroup, eyeX + eyeR * 0.35, eyeY + eyeR * 0.4, headR * 0.92)
+      {/* ── FACE ── */}
+      {/* Eyebrows */}
+      <path d={`M${cx - headR * 0.52} ${headY - headR * 0.25}
+                Q${cx - headR * 0.38} ${headY - headR * 0.32} ${cx - headR * 0.22} ${headY - headR * 0.26}`}
+        stroke={hairC} strokeWidth="2" fill="none" strokeLinecap="round" />
+      <path d={`M${cx + headR * 0.22} ${headY - headR * 0.26}
+                Q${cx + headR * 0.38} ${headY - headR * 0.32} ${cx + headR * 0.52} ${headY - headR * 0.25}`}
+        stroke={hairC} strokeWidth="2" fill="none" strokeLinecap="round" />
+      {/* Eyes — white sclera */}
+      <ellipse cx={cx - headR * 0.35} cy={headY + headR * 0.1} rx={headR * 0.22} ry={headR * 0.19} fill="white" />
+      <ellipse cx={cx + headR * 0.35} cy={headY + headR * 0.1} rx={headR * 0.22} ry={headR * 0.19} fill="white" />
+      {/* Iris */}
+      <circle cx={cx - headR * 0.35} cy={headY + headR * 0.12} r={headR * 0.14} fill="#5b7fa6" />
+      <circle cx={cx + headR * 0.35} cy={headY + headR * 0.12} r={headR * 0.14} fill="#5b7fa6" />
+      {/* Pupil */}
+      <circle cx={cx - headR * 0.35} cy={headY + headR * 0.13} r={headR * 0.08} fill="#1a1a2e" />
+      <circle cx={cx + headR * 0.35} cy={headY + headR * 0.13} r={headR * 0.08} fill="#1a1a2e" />
+      {/* Eye highlight */}
+      <circle cx={cx - headR * 0.31} cy={headY + headR * 0.07} r={headR * 0.045} fill="white" />
+      <circle cx={cx + headR * 0.31} cy={headY + headR * 0.07} r={headR * 0.045} fill="white" />
+      {/* Eyelashes */}
+      <path d={`M${cx - headR * 0.52} ${headY + headR * 0.04}
+                Q${cx - headR * 0.35} ${headY - headR * 0.1} ${cx - headR * 0.18} ${headY + headR * 0.04}`}
+        stroke={hairC} strokeWidth="1.5" fill="none" />
+      <path d={`M${cx + headR * 0.18} ${headY + headR * 0.04}
+                Q${cx + headR * 0.35} ${headY - headR * 0.1} ${cx + headR * 0.52} ${headY + headR * 0.04}`}
+        stroke={hairC} strokeWidth="1.5" fill="none" />
+      {/* Nose */}
+      <path d={`M${cx - 3 * heightScale} ${headY + headR * 0.28}
+                Q${cx} ${headY + headR * 0.42} ${cx + 3 * heightScale} ${headY + headR * 0.28}`}
+        stroke="rgba(0,0,0,0.07)" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      {/* Mouth — smile */}
+      <path d={`M${cx - headR * 0.28} ${headY + headR * 0.52}
+                Q${cx} ${headY + headR * 0.68} ${cx + headR * 0.28} ${headY + headR * 0.52}`}
+        stroke="#d47070" strokeWidth="2.2" fill="none" strokeLinecap="round" />
+      {/* Blush */}
+      <ellipse cx={cx - headR * 0.55} cy={headY + headR * 0.35} rx={headR * 0.22} ry={headR * 0.14} fill="#fca5a5" opacity="0.38" />
+      <ellipse cx={cx + headR * 0.55} cy={headY + headR * 0.35} rx={headR * 0.22} ry={headR * 0.14} fill="#fca5a5" opacity="0.38" />
 
-      // MOUTH
-      const smileMesh = new THREE.Mesh(new THREE.TorusGeometry(0.075 * sc, 0.013 * sc, 6, 14, Math.PI), new THREE.MeshStandardMaterial({ color: 0xe07070, roughness: 0.7 }))
-      smileMesh.position.set(0, 1.54 * heightScale, headR * 0.89)
-      smileMesh.rotation.x = Math.PI
-      bodyGroup.add(smileMesh)
-
-      // BLUSH
-      const blushGeo = new THREE.CircleGeometry(0.075 * sc, 12)
-      const blushMat = new THREE.MeshStandardMaterial({ color: 0xfca5a5, roughness: 0.9, transparent: true, opacity: 0.32 })
-      const lb = new THREE.Mesh(blushGeo, blushMat)
-      lb.position.set(-headR * 0.62, 1.6 * heightScale, headR * 0.86)
-      bodyGroup.add(lb)
-      const rb = new THREE.Mesh(blushGeo.clone(), blushMat)
-      rb.position.set(headR * 0.62, 1.6 * heightScale, headR * 0.86)
-      bodyGroup.add(rb)
-
-      bodyGroup.position.y = 0.1
-      sceneRef.current = { scene, camera, renderer, bodyGroup, animFrame: 0 }
-
-      // Animate
-      let frame = 0
-      const loop = () => {
-        if (!sceneRef.current || cancelled) return
-        frame++
-        if (!isRotating) sceneRef.current.bodyGroup.position.y = 0.1 + Math.sin(frame * 0.04) * 0.04
-        sceneRef.current.renderer.render(sceneRef.current.scene, sceneRef.current.camera)
-        sceneRef.current.animFrame = requestAnimationFrame(loop)
-      }
-      loop()
-
-      // Resize
-      const ro = new ResizeObserver(() => {
-        if (!container || !sceneRef.current) return
-        const nw = container.clientWidth
-        const nh = container.clientHeight
-        sceneRef.current.camera.aspect = nw / nh
-        sceneRef.current.camera.updateProjectionMatrix()
-        sceneRef.current.renderer.setSize(nw, nh)
-      })
-      ro.observe(container)
-
-      cleanup = () => {
-        ro.disconnect()
-        cancelAnimationFrame(sceneRef.current?.animFrame ?? 0)
-        sceneRef.current?.renderer.dispose()
-        const dom = sceneRef.current?.renderer?.domElement
-        if (dom && container.contains(dom)) container.removeChild(dom)
-      }
-    }
-
-    init()
-    return () => {
-      cancelled = true
-      cleanup?.()
-      sceneRef.current = null
-      threeRef.current = null
-    }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Update colors on style change
-  useEffect(() => {
-    if (!sceneRef.current) return
-    sceneRef.current.bodyGroup.traverse((child: T.Mesh) => {
-      if (!(child instanceof threeRef.current.Mesh)) return
-      const m = child.material as T.MeshStandardMaterial
-      if (!m.isMeshStandardMaterial) return
-      const r = child.geometry.boundingSphere?.radius ?? 0.3
-      if (r > 0.38 && r < 0.45) m.color.set(style.skinTone)
-      else if (r > 0.15 && r < 0.38 && child.position.y > 0.3) m.color.set(style.topColor)
-      else if (r > 0.15 && r < 0.38 && child.position.y < -0.4) m.color.set(style.bottomColor)
-      else if (r > 0.05 && r < 0.14 && child.position.y > 1.2) m.color.set(style.hairColor)
-      else if (r > 0.05 && r < 0.14 && child.position.y < -1.5) m.color.set(style.shoeColor)
-      m.needsUpdate = true
-    })
-  }, [style])
-
-  // Rotation
-  useEffect(() => {
-    if (!sceneRef.current) return
-    sceneRef.current.bodyGroup.rotation.y = (rotation * Math.PI) / 180
-  }, [rotation])
-
-  return <div ref={mountRef} className="w-full h-full" style={{ minHeight: '340px' }} />
+      {/* ── ACCESSORIES ── */}
+      {style.accessory === 1 && (
+        <>
+          {/* Watch */}
+          <rect x={cx - torsoW - armW - 4} y={torsoY - torsoH * 0.15} width="10" height="10" rx="3" fill="#d4a574" />
+          <rect x={cx - torsoW - armW - 7} y={torsoY - torsoH * 0.15 + 1} width="16" height="8" rx="2" fill="#92400e" />
+          <circle cx={cx - torsoW - armW + 1} cy={torsoY - torsoH * 0.15 + 5} r="2.5" fill="#fbbf24" />
+        </>
+      )}
+      {style.accessory === 3 && (
+        <>
+          {/* Glasses */}
+          <circle cx={cx - headR * 0.35} cy={headY + headR * 0.1} r={headR * 0.26} stroke="#1f2937" strokeWidth="1.8" fill="none" />
+          <circle cx={cx + headR * 0.35} cy={headY + headR * 0.1} r={headR * 0.26} stroke="#1f2937" strokeWidth="1.8" fill="none" />
+          <line x1={cx - headR * 0.09} y1={headY + headR * 0.1} x2={cx + headR * 0.09} y2={headY + headR * 0.1} stroke="#1f2937" strokeWidth="1.8" />
+          <line x1={cx - headR * 0.61} y1={headY + headR * 0.1} x2={cx - headR - 1} y2={headY + headR * 0.05} stroke="#1f2937" strokeWidth="1.8" />
+          <line x1={cx + headR * 0.61} y1={headY + headR * 0.1} x2={cx + headR + 1} y2={headY + headR * 0.05} stroke="#1f2937" strokeWidth="1.8" />
+        </>
+      )}
+      {style.accessory === 5 && (
+        <>
+          {/* Cap */}
+          <path
+            d={`M${cx - headR * 0.88} ${headY - headR * 0.6} Q${cx} ${headY - headR * 1.18} ${cx + headR * 0.88} ${headY - headR * 0.6} Q${cx} ${headY - headR * 0.75} ${cx - headR * 0.88} ${headY - headR * 0.6} Z`}
+            fill="#ef4444"
+          />
+          <path
+            d={`M${cx - headR * 0.88} ${headY - headR * 0.6} Q${cx} ${headY - headR * 0.78} ${cx + headR * 0.88} ${headY - headR * 0.6}`}
+            fill="#dc2626"
+          />
+          <rect x={cx - headR * 0.88} y={headY - headR * 0.62} width={headR * 1.76} height="5" rx="2.5" fill="#b91c1c" />
+          <path
+            d={`M${cx - headR * 0.88} ${headY - headR * 0.6} Q${cx} ${headY - headR * 0.78} ${cx + headR * 0.88} ${headY - headR * 0.6} L${cx + headR * 1.1} ${headY - headR * 0.55} Q${cx} ${headY - headR * 0.78} ${cx - headR * 1.1} ${headY - headR * 0.55} Z`}
+            fill="#b91c1c"
+          />
+        </>
+      )}
+      {style.accessory === 6 && (
+        <>
+          {/* Headband */}
+          <path d={`M${cx - headR * 0.92} ${headY - headR * 0.5} Q${cx} ${headY - headR * 0.72} ${cx + headR * 0.92} ${headY - headR * 0.5}`} stroke="#f59e0b" strokeWidth="4.5" fill="none" strokeLinecap="round" />
+        </>
+      )}
+    </svg>
+  )
 }
 
 // ============================================================
@@ -333,7 +467,7 @@ function ReadyPlayerMeModal({ onClose, onAvatarSelected, subdomain }: {
 }
 
 // ============================================================
-// model-viewer fallback
+// model-viewer (when RPM GLB URL available)
 // ============================================================
 function AvatarModelViewer({ glbUrl }: { glbUrl: string }) {
   return (
@@ -396,17 +530,37 @@ export default function Avatar3DViewer({
         className="relative flex-1 flex items-center justify-center overflow-hidden rounded-t-2xl"
         style={{ background: 'linear-gradient(180deg, #e8eaff 0%, #fafbff 45%, #f5f3ff 100%)', minHeight: '360px' }}
       >
-        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 80% 70% at 50% 30%, rgba(139,92,246,0.05) 0%, transparent 60%)' }} />
-        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 55% 55% at 50% 25%, rgba(255,255,255,0.85) 0%, transparent 65%)' }} />
+        {/* Aura glow */}
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 80% 70% at 50% 45%, rgba(139,92,246,0.06) 0%, transparent 60%)' }} />
+        {/* Studio spotlight */}
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 55% 40% at 50% 20%, rgba(255,255,255,0.9) 0%, transparent 65%)' }} />
 
-        <div className="relative z-10 flex flex-col items-center justify-center w-full h-full">
+        <div
+          className="relative z-10 flex items-center justify-center transition-transform duration-500"
+          style={{
+            transform: `perspective(800px) rotateY(${rotation}deg) scale(${isRotating ? 1.04 : 1})`,
+          }}
+        >
           {glbUrl ? (
             <AvatarModelViewer glbUrl={glbUrl} />
           ) : (
-            <Avatar3DRenderer metrics={metrics} style={style} rotation={rotation} isRotating={isRotating ?? false} />
+            <VibeAvatar metrics={metrics} style={style} />
           )}
         </div>
 
+        {/* Gender badge */}
+        <div
+          className="absolute bottom-16 left-1/2 -translate-x-1/2 text-xs font-bold px-3 py-1.5 rounded-full shadow-xl z-30"
+          style={{
+            background: metrics.gender === 'female' ? '#ec4899' : metrics.gender === 'male' ? '#6366f1' : '#6b7280',
+            color: 'white',
+            border: '2px solid white',
+          }}
+        >
+          {metrics.gender === 'male' ? '👨 HOMBRE' : metrics.gender === 'female' ? '👩 MUJER' : '⚧️ OTRO'}
+        </div>
+
+        {/* Avatar badge */}
         <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg z-20">
           <span>TU AVATAR</span>
           <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
