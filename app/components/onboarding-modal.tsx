@@ -152,18 +152,18 @@ export default function OnboardingModal({ onComplete }: OnboardingModalProps) {
   const setGender = useUserStore(s => s.setGender)
   const setMetrics = useUserStore(s => s.setMetrics)
 
-  const handleMetricsChange = (m: BodyMetrics) => {
-    setBodyMetrics(m)
-    setGender(m.gender)
-    setMetrics(m.weight, m.height, m.age)
-  }
-
   const [bodyMetrics, setBodyMetrics] = useState<BodyMetrics>({
     weight: 70,
     height: 170,
     age: 30,
     gender: 'other',
   })
+
+  const handleMetricsChange = (m: BodyMetrics) => {
+    setBodyMetrics(m)
+    setGender(m.gender)
+    setMetrics(m.weight, m.height, m.age)
+  }
   const [avatarStyle, setAvatarStyle] = useState<AvatarStyle>({
     skinTone: '#d4a574',
     hairStyle: 1,
@@ -330,7 +330,7 @@ export default function OnboardingModal({ onComplete }: OnboardingModalProps) {
                 <motion.div key="step1" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
                   <div className="text-center mb-6">
                     <div className="text-4xl mb-3">👋</div>
-                    <h3 className="text-xl font-bold mb-1">¡Bienvenido a NutriGuía!</h3>
+                    <h3 className="text-xl font-bold mb-1">¡Bienvenido a NutriVibe!</h3>
                     <p className="text-muted-foreground text-sm">Conozcámonos. ¿Cómo te llamas?</p>
                   </div>
                   <input

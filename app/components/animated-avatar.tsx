@@ -184,7 +184,7 @@ export default function AnimatedAvatar({
 
             {/* Head */}
             <circle cx="50" cy="40" r="21" fill="#fef3c7" />
-            <circle cx="50" cy="40" r="21" fill="url(#grad-face)" opacity="0.3" />
+            <circle cx="50" cy="40" r="21" fill={`url(#grad-${mood})`} opacity="0.3" />
 
             {/* Hair / leaves */}
             <motion.path

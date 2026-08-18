@@ -113,7 +113,7 @@ export default function PricingModal({ onClose, trigger = 'upgrade_cta', dailyMe
         ? '💬 Llegaste al límite diario'
         : '🔓 Desbloquea más conversaciones'
     }
-    return 'Elige tu plan de NutriGuía'
+    return 'Elige tu plan de NutriVibe'
   }
 
   const getSubtitle = () => {

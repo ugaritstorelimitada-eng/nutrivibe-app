@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'NutriVibe — Tu Asistente de Nutrición y Entrenamiento',
-    description: 'Consulta a NutriGuía, tu asistente inteligente para comer mejor.',
+    description: 'Consulta a NutriVibe, tu asistente inteligente para comer mejor.',
     images: ['/og-image.png'],
   },
 }

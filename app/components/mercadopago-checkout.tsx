@@ -103,7 +103,7 @@ export default function MercadoPagoCheckout({ plan, onSuccess, onClose }: Mercad
         <div className="flex items-center justify-between">
           <div>
             <span className="text-xs font-bold text-indigo-600">{plan.badge}</span>
-            <p className="font-bold text-gray-900 mt-0.5">NutriGuía {plan.name}</p>
+            <p className="font-bold text-gray-900 mt-0.5">NutriVibe {plan.name}</p>
             <p className="text-xs text-muted-foreground">Acceso mensual · Renovación automática</p>
           </div>
           <div className="text-right">

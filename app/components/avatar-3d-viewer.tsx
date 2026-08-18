@@ -7,7 +7,7 @@ import type { BodyMetrics, AvatarStyle } from './avatar-customizer'
 // VibeAvatar — AI-generated 3D PNG render
 // No external dependencies, loads instantly
 // ============================================================
-function VibeAvatar({ metrics }: { metrics: BodyMetrics; style: AvatarStyle }) {
+function VibeAvatar({ metrics }: { metrics: BodyMetrics }) {
   const isFemale = metrics.gender === 'female'
   const avatarSrc = isFemale ? '/avatars/avatar-female.png' : '/avatars/avatar-male.png'
 
@@ -82,7 +82,7 @@ export default function Avatar3DViewer({
             transform: `perspective(800px) rotateY(${rotation}deg) scale(${isRotating ? 1.04 : 1})`,
           }}
         >
-          <VibeAvatar metrics={metrics} style={style} />
+          <VibeAvatar metrics={metrics} />
         </div>
 
         <div

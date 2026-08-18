@@ -83,7 +83,7 @@ export default function TopicsSection() {
             ¿Qué puedo preguntarle?
           </h2>
           <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-            Haz clic en cualquier tema para chatear con NutriGuía sobre eso.
+            Haz clic en cualquier tema para chatear con NutriVibe sobre eso.
           </p>
         </motion.div>
 

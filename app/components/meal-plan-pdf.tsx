@@ -84,7 +84,7 @@ startxref
   text += `═══════════════════════════════════════════════════\n`
   text += `          🍽️  PLAN SEMANAL DE ALIMENTACIÓN\n`
   text += `═══════════════════════════════════════════════════\n\n`
-  text += `NutriGuía — ${today}\n`
+  text += `NutriVibe — ${today}\n`
   if (userName) text += `Usuario: ${userName}\n`
   if (goals.length > 0) text += `Objetivos: ${goals.join(', ')}\n`
   text += `\n───────────────────────────────────────────────────\n`
@@ -108,7 +108,7 @@ startxref
   text += `\n💧 Hidratación: Mínimo 8 vasos de agua al día\n`
   text += `🥗 Consejo: Come colores — cada color es un nutriente diferente\n`
   text += `\n⚠️ Este plan es informativo. Consulta a un nutricionista para planes personalizados.\n`
-  text += `\nGenerado por NutriGuía — ${today}\n`
+  text += `\nGenerado por NutriVibe — ${today}\n`
 
   return text
 }
@@ -139,7 +139,7 @@ export default function MealPlanPDF({ messages, userName, goals }: MealPlanPDFPr
     doc.text('Plan Semanal de Alimentación', pageWidth / 2, 18, { align: 'center' })
     doc.setFontSize(11)
     doc.setFont('helvetica', 'normal')
-    doc.text(`NutriGuía — ${today}`, pageWidth / 2, 28, { align: 'center' })
+    doc.text(`NutriVibe — ${today}`, pageWidth / 2, 28, { align: 'center' })
     if (userName) doc.text(`Usuario: ${userName}`, pageWidth / 2, 35, { align: 'center' })
 
     // Goals
@@ -229,14 +229,14 @@ export default function MealPlanPDF({ messages, userName, goals }: MealPlanPDFPr
     doc.text('⚠️ Este plan es informativo. Consulta a un nutricionista para planes personalizados.', marginLeft, y)
     y += 10
     doc.setFontSize(8)
-    doc.text(`Generado por NutriGuía — ${today}`, marginLeft, y)
+    doc.text(`Generado por NutriVibe — ${today}`, marginLeft, y)
 
     // Footer
     doc.setFontSize(7)
     doc.setTextColor(180, 180, 180)
-    doc.text('nutriguia.app', pageWidth - marginLeft, 290, { align: 'right' })
+    doc.text('nutrivibe.app', pageWidth - marginLeft, 290, { align: 'right' })
 
-    doc.save(`plan-semanal-nutriguia-${Date.now()}.pdf`)
+    doc.save(`plan-semanal-nutrivibe-${Date.now()}.pdf`)
   }, [messages, userName, goals])
 
   return (

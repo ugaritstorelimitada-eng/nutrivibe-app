@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { RotateCcw, TrendingUp, Camera, Zap } from 'lucide-react'
 import Avatar3DViewer from './avatar-3d-viewer'
@@ -23,6 +23,7 @@ export default function HeroSection() {
   const [userName, setUserName] = useState<string | null>(null)
   const [greeting, setGreeting] = useState('¡Hola!')
   const [rotation, setRotation] = useState(0)
+  const rotateIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [showProgress, setShowProgress] = useState(false)
   const [showClothes, setShowClothes] = useState(false)
   const [isRotating, setIsRotating] = useState(false)
@@ -70,6 +71,10 @@ export default function HeroSection() {
     if (hour < 12) setGreeting('¡Buenos días!')
     else if (hour < 18) setGreeting('¡Buenas tardes!')
     else setGreeting('¡Buenas noches!')
+
+    return () => {
+      if (rotateIntervalRef.current) clearInterval(rotateIntervalRef.current)
+    }
   }, [])
 
   const bmi = metrics.weight / Math.pow(metrics.height / 100, 2)
@@ -83,16 +88,20 @@ export default function HeroSection() {
   const calorieNeeds = tdee
 
   const handleRotate = () => {
+    if (isRotating) return
     setIsRotating(true)
-    let deg = rotation
+    let deg = 0
     const interval = setInterval(() => {
       deg += 10
       setRotation(deg)
-      if (deg >= rotation + 360) {
+      if (deg >= 360) {
         clearInterval(interval)
         setIsRotating(false)
+        setRotation(0)
       }
     }, 16)
+    // Store interval ref for cleanup
+    rotateIntervalRef.current = interval
   }
 
   return (

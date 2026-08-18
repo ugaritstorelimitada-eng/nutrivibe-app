@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 const ABACUS_BASE_URL = 'https://routellm.abacus.ai/v1'
 
-const SYSTEM_PROMPT = `Eres **NutriGuía**, un asistente virtual experto y apasionado en alimentación saludable. Hablas en español con un tono cálido, motivador y cercano — como un nutricionista amigo que te acompaña en tu camino hacia una vida más saludable.
+const SYSTEM_PROMPT = `Eres **NutriVibe**, un asistente virtual experto y apasionado en alimentación saludable. Hablas en español con un tono cálido, motivador y cercano — como un nutricionista amigo que te acompaña en tu camino hacia una vida más saludable.
 
 ## Tu Personalidad
 - Cálido y empático: nunca juzgas los hábitos alimenticios del usuario.
@@ -31,7 +31,24 @@ const SYSTEM_PROMPT = `Eres **NutriGuía**, un asistente virtual experto y apasi
 - **Nunca recomiendes suplementos específicos** con dosis — deriva a un nutricionista/médico.`
 
 export async function POST(req: NextRequest) {
-  const { messages } = await req.json()
+  let messages: unknown[] = []
+  try {
+    const body = await req.json()
+    if (Array.isArray(body.messages)) {
+      messages = body.messages.filter(
+        (m: unknown): m is { role: string; content: string } =>
+          typeof m === 'object' && m !== null &&
+          typeof (m as any).role === 'string' &&
+          typeof (m as any).content === 'string'
+      )
+    }
+  } catch {
+    return NextResponse.json({ error: 'Body inválido' }, { status: 400 })
+  }
+
+  if (messages.length === 0) {
+    return NextResponse.json({ error: 'No se enviaron mensajes' }, { status: 400 })
+  }
 
   const apiKey = process.env.ABACUSAI_API_KEY
   if (!apiKey) {
@@ -49,7 +66,7 @@ export async function POST(req: NextRequest) {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: 'gpt-5.4-mini',
+            model: 'gpt-4o-mini',
             stream: true,
             messages: [
               { role: 'system', content: SYSTEM_PROMPT },

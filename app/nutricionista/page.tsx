@@ -195,7 +195,7 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
         <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
           <Shield className="w-8 h-8 text-primary" />
         </div>
-        <h1 className="text-2xl font-bold mb-1">Panel NutriGuía</h1>
+        <h1 className="text-2xl font-bold mb-1">Panel NutriVibe</h1>
         <p className="text-muted-foreground text-sm mb-6">Acceso exclusivo para nutricionistas</p>
 
         <div className="flex gap-3 justify-center mb-4">
@@ -462,7 +462,7 @@ function PatientDetail({
                   }`}
                 >
                   <div className="text-xs opacity-60 mb-0.5">
-                    {msg.role === 'user' ? patient.profile.name : 'NutriGuía IA'} · {new Date(msg.createdAt).toLocaleString('es-CL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    {msg.role === 'user' ? patient.profile.name : 'NutriVibe IA'} · {new Date(msg.createdAt).toLocaleString('es-CL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                   </div>
                   <div className="whitespace-pre-wrap leading-relaxed">{msg.content}</div>
                 </div>
@@ -607,7 +607,7 @@ export default function NutricionistaPanel() {
             </div>
             <div>
               <h1 className="font-bold text-lg leading-tight">Panel Nutricionista</h1>
-              <p className="text-xs text-muted-foreground">{nutricionistaName} · NutriGuía VIP</p>
+              <p className="text-xs text-muted-foreground">{nutricionistaName} · NutriVibe VIP</p>
             </div>
           </div>
           <div className="flex items-center gap-2">

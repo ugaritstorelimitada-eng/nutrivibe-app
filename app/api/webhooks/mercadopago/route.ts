@@ -83,7 +83,13 @@ import { NextResponse } from 'next/server'
 // TEMPORARY: mock response para static export
 export async function POST(request: Request) {
   try {
-    const { type, data } = await request.json()
+    const body = await request.json()
+    const { type, data } = body ?? {}
+
+    if (!type || !data || !data.id) {
+      return NextResponse.json({ error: 'Payload inválido' }, { status: 400 })
+    }
+
     console.log(`Webhook recibido: type=${type}, payment_id=${data?.id}`)
 
     // En producción real, procesa el pago aquí

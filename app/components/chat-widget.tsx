@@ -36,7 +36,7 @@ const SUGGESTIONS = [
 
 const MAX_CHARS = 1000
 
-const BASE_SYSTEM_PROMPT = `Eres **NutriGuía**, un asistente virtual experto y apasionado en alimentación saludable. Hablas en español con un tono cálido, motivador y cercano — como un nutricionista amigo que te acompaña en tu camino hacia una vida más saludable.
+const BASE_SYSTEM_PROMPT = `Eres **NutriVibe**, un asistente virtual experto y apasionado en alimentación saludable. Hablas en español con un tono cálido, motivador y cercano — como un nutricionista amigo que te acompaña en tu camino hacia una vida más saludable.
 
 ## Tu Personalidad
 - Cálido y empático: nunca juzgas los hábitos alimenticios del usuario.
@@ -363,7 +363,7 @@ export default function ChatWidget({ initialPrompt, onProfileUpdate }: ChatWidge
     doc.text('Plan Semanal de Alimentación', pageWidth / 2, 16, { align: 'center' })
     doc.setFontSize(10)
     doc.setFont('helvetica', 'normal')
-    doc.text(`NutriGuía — ${today}`, pageWidth / 2, 26, { align: 'center' })
+    doc.text(`NutriVibe — ${today}`, pageWidth / 2, 26, { align: 'center' })
     if (profile?.name) doc.text(`Usuario: ${profile.name}`, pageWidth / 2, 33, { align: 'center' })
 
     let y = 50
@@ -393,11 +393,11 @@ export default function ChatWidget({ initialPrompt, onProfileUpdate }: ChatWidge
     doc.setFont('helvetica', 'italic')
     doc.text('💧 Mínimo 8 vasos de agua al día', margin, y); y += 5
     doc.text('⚠️ Plan informativo. Consulta a un nutricionista.', margin, y); y += 5
-    doc.text(`Generado por NutriGuía — ${today}`, margin, y)
+    doc.text(`Generado por NutriVibe — ${today}`, margin, y)
     doc.setFontSize(7)
-    doc.text('nutriguia.app', pageWidth - margin, 290, { align: 'right' })
+    doc.text('nutrivibe.app', pageWidth - margin, 290, { align: 'right' })
 
-    doc.save(`plan-semanal-nutriguia-${Date.now()}.pdf`)
+    doc.save(`plan-semanal-nutrivibe-${Date.now()}.pdf`)
   }, [lastContent, profile?.name])
 
   return (
@@ -409,7 +409,7 @@ export default function ChatWidget({ initialPrompt, onProfileUpdate }: ChatWidge
           <AnimatedAvatar size={42} mood={avatarMood} />
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="font-display font-bold text-lg leading-tight">NutriGuía</h2>
+              <h2 className="font-display font-bold text-lg leading-tight">NutriVibe</h2>
               <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${planInfo.color}`}>
                 {planInfo.icon}
                 <span className="hidden sm:inline">{planInfo.label}</span>
@@ -495,7 +495,7 @@ export default function ChatWidget({ initialPrompt, onProfileUpdate }: ChatWidge
               <Leaf className="w-8 h-8 text-primary" />
             </motion.div>
             <motion.h3 initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="font-display font-semibold text-lg mb-2">
-              ¡Hola{profile?.name ? `, ${profile.name}` : ''}! Soy NutriGuía 🌿
+              ¡Hola{profile?.name ? `, ${profile.name}` : ''}! Soy NutriVibe 🌿
             </motion.h3>
             <motion.p initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="text-muted-foreground text-sm max-w-md mb-4">
               {plan === 'FREE' ? `${FREE_DAILY_LIMIT - dailyMessageCount} mensajes gratis hoy. ` : ''}Pregúntame lo que quieras sobre alimentación.
@@ -521,7 +521,7 @@ export default function ChatWidget({ initialPrompt, onProfileUpdate }: ChatWidge
                 {msg.role === 'assistant' && (
                   <div className="flex items-center gap-1.5 mb-1">
                     <Leaf className="w-3.5 h-3.5 text-primary" />
-                    <span className="text-xs font-semibold text-primary">NutriGuía</span>
+                    <span className="text-xs font-semibold text-primary">NutriVibe</span>
                     {plan !== 'FREE' && (
                       <span className={`ml-1 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-semibold ${planInfo.color}`}>
                         {planInfo.icon} {planInfo.label}

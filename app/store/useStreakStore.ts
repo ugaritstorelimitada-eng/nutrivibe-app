@@ -40,13 +40,18 @@ interface StreakState {
 }
 
 function getToday(): string {
-  return new Date().toISOString().split('T')[0];
+  const now = new Date();
+  const offset = now.getTimezoneOffset();
+  const local = new Date(now.getTime() - offset * 60 * 1000);
+  return local.toISOString().split('T')[0];
 }
 
 function getYesterday(): string {
   const d = new Date();
   d.setDate(d.getDate() - 1);
-  return d.toISOString().split('T')[0];
+  const offset = d.getTimezoneOffset();
+  const local = new Date(d.getTime() - offset * 60 * 1000);
+  return local.toISOString().split('T')[0];
 }
 
 function getWeekNumber(): number {
@@ -62,7 +67,9 @@ function getDaysInRange(days: number): string[] {
   for (let i = days - 1; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
-    dates.push(d.toISOString().split('T')[0]);
+    const offset = d.getTimezoneOffset();
+    const local = new Date(d.getTime() - offset * 60 * 1000);
+    dates.push(local.toISOString().split('T')[0]);
   }
   return dates;
 }

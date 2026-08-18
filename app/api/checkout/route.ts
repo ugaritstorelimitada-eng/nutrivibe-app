@@ -14,8 +14,8 @@ import { NextResponse } from 'next/server'
  */
 
 const PLAN_PRICES: Record<string, { title: string; price: number }> = {
-  PRO: { title: 'NutriGuía Pro - Mensual', price: 4990 },
-  ASESORADO: { title: 'NutriGuía Asesorado - Mensual', price: 14990 },
+  PRO: { title: 'NutriVibe Pro - Mensual', price: 4990 },
+  ASESORADO: { title: 'NutriVibe Asesorado - Mensual', price: 14990 },
 }
 
 // ============================================================

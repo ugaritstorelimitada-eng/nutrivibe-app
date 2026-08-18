@@ -28,7 +28,7 @@ export default function FloatingCompanion({ mood: initialMood, speechText: initi
     if (!visible || hasSpokenRef.current) return
     hasSpokenRef.current = true
     const timer = setTimeout(() => {
-      setSpeechText('¡Hola! Soy NutriGuía. ¿En qué te puedo ayudar hoy? 😊')
+      setSpeechText('¡Hola! Soy NutriVibe. ¿En qué te puedo ayudar hoy? 😊')
       setShowSpeech(true)
       setMood('wave')
       setTimeout(() => {
@@ -99,7 +99,7 @@ export default function FloatingCompanion({ mood: initialMood, speechText: initi
             onClick={handleClick}
             onDoubleClick={handleDoubleClick}
             className="block focus:outline-none focus:ring-2 focus:ring-primary rounded-full"
-            title="NutriGuía - Tu asistente nutricional"
+            title="NutriVibe - Tu asistente nutricional"
           >
             <AnimatedAvatar
               size={72}

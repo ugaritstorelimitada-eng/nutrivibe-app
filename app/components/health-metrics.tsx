@@ -20,13 +20,18 @@ function WaterTracker() {
 
   // Cargar desde localStorage
   useEffect(() => {
-    const saved = localStorage.getItem('nutriguia_water')
-    if (saved) {
-      const { glasses: savedGlasses, date } = JSON.parse(saved)
-      const today = new Date().toDateString()
-      if (date === today) {
-        setGlasses(savedGlasses)
+    try {
+      const saved = localStorage.getItem('nutriguia_water')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        const { glasses: savedGlasses, date } = parsed
+        const today = new Date().toDateString()
+        if (date === today) {
+          setGlasses(savedGlasses)
+        }
       }
+    } catch {
+      // localStorage corrupto — ignorar y usar estado inicial
     }
   }, [])
 
@@ -134,7 +139,16 @@ function WaterTracker() {
         </motion.div>
       )}
 
-      {mounted && new Date().toDateString() !== JSON.parse(localStorage.getItem('nutriguia_water') ?? '{}').date && (
+      {mounted && (() => {
+        try {
+          const saved = localStorage.getItem('nutriguia_water')
+          if (saved) {
+            const { date } = JSON.parse(saved)
+            return new Date().toDateString() !== date
+          }
+        } catch { return true }
+        return true
+      })() && (
         <p className="mt-2 text-center text-xs text-muted-foreground">
           El contador se reinicia cada día automáticamente
         </p>
@@ -154,7 +168,8 @@ function BMICalculator() {
   // Cargar datos guardados
   useEffect(() => {
     const savedData = localStorage.getItem('nutriguia_bmi')
-    if (savedData) {
+    if (!savedData) return
+    try {
       const data = JSON.parse(savedData)
       setWeight(data.weight ?? '')
       setHeight(data.height ?? '')
@@ -162,6 +177,8 @@ function BMICalculator() {
         setBmi(data.bmi)
         setCategory(data.category ?? '')
       }
+    } catch {
+      // localStorage corrupto — ignorar
     }
   }, [])
 
@@ -315,7 +332,8 @@ function CalorieEstimator() {
 
   useEffect(() => {
     const saved = localStorage.getItem('nutriguia_calories')
-    if (saved) {
+    if (!saved) return
+    try {
       const data = JSON.parse(saved)
       setSex(data.sex ?? 'male')
       setWeight(data.weight ?? '')
@@ -323,6 +341,8 @@ function CalorieEstimator() {
       setAge(data.age ?? '')
       setActivity(data.activity ?? 'moderate')
       if (data.calories) setCalories(data.calories)
+    } catch {
+      // localStorage corrupto — ignorar
     }
   }, [])
 
