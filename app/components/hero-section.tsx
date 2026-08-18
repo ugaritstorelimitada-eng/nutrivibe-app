@@ -146,8 +146,8 @@ export default function HeroSection() {
           <div className="flex flex-col items-center">
             {/* Canvas container */}
             <div className="relative w-full max-w-sm mx-auto">
-              {/* 3D-style canvas card */}
-              <div className="relative bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-indigo-100/50 overflow-hidden"
+              {/* 3D-style canvas card — float + hover lift */}
+              <div className="relative bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-indigo-100/50 overflow-hidden hover-lift transition-shadow duration-300"
                 style={{
                   boxShadow: '0 25px 50px -12px rgba(99, 102, 241, 0.15), 0 0 0 1px rgba(99, 102, 241, 0.05), inset 0 1px 0 rgba(255,255,255,0.8)',
                 }}
@@ -166,13 +166,15 @@ export default function HeroSection() {
                 </div>
 
                 {/* Avatar 3D Viewer Component */}
-                <Avatar3DViewer
-                  metrics={metrics}
-                  style={style}
-                  isRotating={isRotating}
-                  showClothes={showClothes}
-                  showProgress={showProgress}
-                />
+                <div className="animate-float" style={{ animationDelay: '0.5s' }}>
+                  <Avatar3DViewer
+                    metrics={metrics}
+                    style={style}
+                    isRotating={isRotating}
+                    showClothes={showClothes}
+                    showProgress={showProgress}
+                  />
+                </div>
 
                 {/* Canvas action buttons */}
                 <div className="px-4 py-3 bg-white border-t flex items-center justify-center gap-3">
@@ -181,7 +183,7 @@ export default function HeroSection() {
                     whileTap={{ scale: 0.95 }}
                     onClick={handleRotate}
                     disabled={isRotating}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-100 text-indigo-700 text-xs font-semibold hover:bg-indigo-200 transition-colors disabled:opacity-50"
+                    className="hover-press flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-100 text-indigo-700 text-xs font-semibold hover:bg-indigo-200 transition-colors disabled:opacity-50"
                   >
                     <RotateCcw className={`w-3.5 h-3.5 ${isRotating ? 'animate-spin' : ''}`} />
                     Girar 360°
@@ -191,7 +193,7 @@ export default function HeroSection() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => { setShowClothes(!showClothes); setShowProgress(false) }}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${
+                    className={`hover-press flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${
                       showClothes ? 'bg-violet-100 text-violet-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                   >
@@ -202,7 +204,7 @@ export default function HeroSection() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => { setShowProgress(!showProgress); setShowClothes(false) }}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${
+                    className={`hover-press flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${
                       showProgress ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                   >
@@ -228,7 +230,7 @@ export default function HeroSection() {
                               <button
                                 key={i}
                                 onClick={() => setStyle(s => ({ ...s, topColor: color }))}
-                                className={`w-7 h-7 rounded-lg border-2 transition-all ${style.topColor === color ? 'border-indigo-600 scale-110' : 'border-gray-200 hover:scale-105'}`}
+                                className={`swatch-hover w-7 h-7 rounded-lg border-2 transition-all ${style.topColor === color ? 'border-indigo-600 scale-110' : 'border-gray-200'}`}
                                 style={{ backgroundColor: color }}
                               />
                             ))}
@@ -241,7 +243,7 @@ export default function HeroSection() {
                               <button
                                 key={i}
                                 onClick={() => setStyle(s => ({ ...s, bottomColor: color }))}
-                                className={`w-7 h-7 rounded-lg border-2 transition-all ${style.bottomColor === color ? 'border-indigo-600 scale-110' : 'border-gray-200 hover:scale-105'}`}
+                                className={`swatch-hover w-7 h-7 rounded-lg border-2 transition-all ${style.bottomColor === color ? 'border-indigo-600 scale-110' : 'border-gray-200'}`}
                                 style={{ backgroundColor: color }}
                               />
                             ))}
@@ -290,11 +292,11 @@ export default function HeroSection() {
 
             {/* CTA below avatar */}
             <div className="mt-6 flex flex-col sm:flex-row gap-3 w-full max-w-sm mx-auto">
-              <a href="#chat" className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors text-sm shadow-lg shadow-primary/25">
+              <a href="#chat" className="hover-press flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors text-sm shadow-lg shadow-primary/25">
                 <span className="text-base">▶</span>
                 Comenzar
               </a>
-              <a href="#temas" className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border-2 border-indigo-200 text-indigo-700 font-semibold hover:bg-indigo-50 transition-colors text-sm">
+              <a href="#temas" className="hover-press flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border-2 border-indigo-200 text-indigo-700 font-semibold hover:bg-indigo-50 transition-colors text-sm">
                 <Zap className="w-4 h-4" />
                 Explorar
               </a>
@@ -310,7 +312,7 @@ export default function HeroSection() {
             </div>
 
             {/* Body Measurements Card */}
-            <div className="bg-white rounded-2xl border shadow-sm p-5">
+            <div className="bg-white rounded-2xl border shadow-sm p-5 hover-lift">
               <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
                 📏 Medidas corporales
               </h3>
@@ -350,7 +352,7 @@ export default function HeroSection() {
                   <input
                     type="range" min={40} max={150} value={metrics.weight}
                     onChange={e => setMetrics(m => ({ ...m, weight: parseInt(e.target.value) }))}
-                    className="w-full accent-indigo-600 h-2"
+                    className="w-full accent-indigo-600 h-2 focus-glow rounded"
                   />
                   <div className="flex justify-between text-[10px] text-muted-foreground mt-0.5">
                     <span>40 kg</span><span>150 kg</span>
@@ -366,7 +368,7 @@ export default function HeroSection() {
                   <input
                     type="range" min={140} max={210} value={metrics.height}
                     onChange={e => setMetrics(m => ({ ...m, height: parseInt(e.target.value) }))}
-                    className="w-full accent-indigo-600 h-2"
+                    className="w-full accent-indigo-600 h-2 focus-glow rounded"
                   />
                   <div className="flex justify-between text-[10px] text-muted-foreground mt-0.5">
                     <span>140 cm</span><span>210 cm</span>
@@ -382,7 +384,7 @@ export default function HeroSection() {
                   <input
                     type="range" min={16} max={80} value={metrics.age}
                     onChange={e => setMetrics(m => ({ ...m, age: parseInt(e.target.value) }))}
-                    className="w-full accent-indigo-600 h-2"
+                    className="w-full accent-indigo-600 h-2 focus-glow rounded"
                   />
                 </div>
 
@@ -411,7 +413,7 @@ export default function HeroSection() {
             </div>
 
             {/* BMI Card */}
-            <div className="bg-white rounded-2xl border shadow-sm p-5">
+            <div className="bg-white rounded-2xl border shadow-sm p-5 hover-lift">
               <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
                 📊 Tu índice de masa corporal
               </h3>
@@ -448,7 +450,7 @@ export default function HeroSection() {
             </div>
 
             {/* Style Card */}
-            <div className="bg-white rounded-2xl border shadow-sm p-5">
+            <div className="bg-white rounded-2xl border shadow-sm p-5 hover-lift">
               <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
                 🎨 Personaliza tu estilo
               </h3>
@@ -461,7 +463,7 @@ export default function HeroSection() {
                       <button
                         key={i}
                         onClick={() => setStyle(s => ({ ...s, skinTone: tone }))}
-                        className={`w-8 h-8 rounded-full border-2 transition-all ${style.skinTone === tone ? 'border-indigo-600 scale-110' : 'border-gray-200 hover:scale-105'}`}
+                        className={`swatch-hover w-8 h-8 rounded-full border-2 transition-all ${style.skinTone === tone ? 'border-indigo-600 scale-110' : 'border-gray-200'}`}
                         style={{ backgroundColor: tone }}
                       />
                     ))}
@@ -476,7 +478,7 @@ export default function HeroSection() {
                       <button
                         key={i}
                         onClick={() => setStyle(s => ({ ...s, hairColor: color }))}
-                        className={`w-7 h-7 rounded-full border-2 transition-all ${style.hairColor === color ? 'border-indigo-600 scale-110' : 'border-gray-200 hover:scale-105'}`}
+                        className={`swatch-hover w-7 h-7 rounded-full border-2 transition-all ${style.hairColor === color ? 'border-indigo-600 scale-110' : 'border-gray-200'}`}
                         style={{ backgroundColor: color }}
                       />
                     ))}
@@ -498,7 +500,7 @@ export default function HeroSection() {
                       <button
                         key={h.id}
                         onClick={() => setStyle(s => ({ ...s, hairStyle: h.id }))}
-                        className={`py-2 rounded-xl text-xs font-medium transition-all flex flex-col items-center gap-0.5 ${
+                        className={`hover-press py-2 rounded-xl text-xs font-medium transition-all flex flex-col items-center gap-0.5 ${
                           style.hairStyle === h.id
                             ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-300'
                             : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border-2 border-transparent'
@@ -519,7 +521,7 @@ export default function HeroSection() {
                 localStorage.setItem('nutriguia_body_metrics', JSON.stringify(metrics))
                 localStorage.setItem('nutriguia_avatar_style', JSON.stringify(style))
               }}
-              className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors shadow-lg shadow-primary/25 text-sm"
+              className="hover-press w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors shadow-lg shadow-primary/25 text-sm"
             >
               Guardar cambios
             </button>

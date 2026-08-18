@@ -278,8 +278,8 @@ export default function SiteHeader({ user }: SiteHeaderProps) {
       <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
         {/* Logo */}
         <a href="/" className="flex items-center gap-2.5 group">
-          {/* Isotipo: chispa/energía estilizada */}
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          {/* Isotipo: chispa/energía estilizada — con glow sutil */}
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="animate-logo-glow transition-all duration-300 group-hover:scale-105">
             <defs>
               <linearGradient id="logoGrad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
                 <stop offset="0%" stopColor="#10b981"/>
@@ -301,10 +301,10 @@ export default function SiteHeader({ user }: SiteHeaderProps) {
 
         {/* Nav + Account */}
         <div className="flex items-center gap-1">
-          <a href="#chat" className="px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-muted transition-colors">
+          <a href="#chat" className="nav-link px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-muted transition-colors">
             Chat
           </a>
-          <a href="#temas" className="px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-muted transition-colors">
+          <a href="#temas" className="nav-link px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-muted transition-colors">
             Temas
           </a>
 

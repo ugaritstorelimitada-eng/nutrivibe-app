@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import './animations/animations.css';
+
 @layer base {
   :root {
     --background: 120 20% 98%;

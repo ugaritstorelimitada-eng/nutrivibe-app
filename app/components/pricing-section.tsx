@@ -219,13 +219,13 @@ function PlanCard({ plan, isCurrentPlan }: { plan: PlanConfig; isCurrentPlan: bo
               Plan activo ✓
             </div>
           ) : plan.id === 'FREE' ? (
-            <button className="w-full py-2.5 rounded-xl bg-gray-100 text-gray-700 text-sm font-semibold hover:bg-gray-200 transition-colors">
+            <button className="hover-press w-full py-2.5 rounded-xl bg-gray-100 text-gray-700 text-sm font-semibold hover:bg-gray-200 transition-colors">
               Plan actual
             </button>
           ) : (
             <button
               onClick={() => setShowModal(true)}
-              className={`w-full py-2.5 rounded-xl text-white text-sm font-bold transition-all shadow-lg hover:shadow-xl active:scale-95 bg-gradient-to-r ${plan.gradient}`}
+              className={`hover-press w-full py-2.5 rounded-xl text-white text-sm font-bold transition-all shadow-lg hover:shadow-xl active:scale-95 bg-gradient-to-r ${plan.gradient}`}
             >
               Activar {plan.name}
             </button>

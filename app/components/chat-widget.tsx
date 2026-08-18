@@ -403,7 +403,8 @@ export default function ChatWidget({ initialPrompt, onProfileUpdate }: ChatWidge
   return (
     <div className="flex flex-col w-full max-w-3xl mx-auto bg-card rounded-2xl overflow-hidden" style={{ boxShadow: 'var(--shadow-lg)' }}>
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-3 bg-primary text-primary-foreground">
+      <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}
+        className="flex items-center justify-between px-5 py-3 bg-primary text-primary-foreground">
         <div className="flex items-center gap-3">
           <AnimatedAvatar size={42} mood={avatarMood} />
           <div>
@@ -443,7 +444,7 @@ export default function ChatWidget({ initialPrompt, onProfileUpdate }: ChatWidge
             </a>
           )}
         </div>
-      </div>
+      </motion.div>
 
       {/* Paywall */}
       <AnimatePresence>
@@ -536,12 +537,12 @@ export default function ChatWidget({ initialPrompt, onProfileUpdate }: ChatWidge
                   <div className="whitespace-pre-wrap">{msg.content}</div>
                 )}
                 {isStreaming && msg.id === messages.at(-1)?.id && msg.role === 'assistant' && (
-                  <div className="flex items-center gap-1 text-muted-foreground mt-1">
-                    <motion.span animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1.2, repeat: Infinity }} className="flex gap-0.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-primary/60" />
-                      <span className="w-1.5 h-1.5 rounded-full bg-primary/60" />
-                      <span className="w-1.5 h-1.5 rounded-full bg-primary/60" />
-                    </motion.span>
+                  <div className="flex items-center gap-1 text-muted-foreground mt-2">
+                    <span className="flex gap-0.5 items-center">
+                      <span className="typing-dot w-1.5 h-1.5 rounded-full bg-primary/60" />
+                      <span className="typing-dot w-1.5 h-1.5 rounded-full bg-primary/60" />
+                      <span className="typing-dot w-1.5 h-1.5 rounded-full bg-primary/60" />
+                    </span>
                   </div>
                 )}
                 {msg.error && (
@@ -589,7 +590,7 @@ export default function ChatWidget({ initialPrompt, onProfileUpdate }: ChatWidge
             <textarea ref={inputRef} value={input} onChange={handleInputChange} onKeyDown={handleKeyDown}
               placeholder={isFreeLimit ? '📷 Toma una foto de tu comida...' : 'Escribe tu pregunta...'}
               rows={1}
-              className="flex-1 w-full resize-none bg-muted rounded-xl px-4 py-3 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground/60 disabled:opacity-50"
+              className="flex-1 w-full resize-none bg-muted rounded-xl px-4 py-3 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground/60 disabled:opacity-50 focus-glow transition-shadow"
               style={{ minHeight: '44px', maxHeight: '128px' }}
               disabled={isStreaming || isFreeLimit} />
             <div className={`absolute bottom-2 right-3 text-xs ${input.length > MAX_CHARS * 0.9 ? 'text-destructive' : 'text-muted-foreground'}`}>
@@ -599,7 +600,7 @@ export default function ChatWidget({ initialPrompt, onProfileUpdate }: ChatWidge
 
           {/* Camera */}
           <button onClick={handleCameraClick} disabled={isStreaming || isFreeLimit || isAnalyzingImage}
-            className="p-3 rounded-xl bg-emerald-100 text-emerald-700 hover:bg-emerald-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex-shrink-0"
+            className="hover-press p-3 rounded-xl bg-emerald-100 text-emerald-700 hover:bg-emerald-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex-shrink-0"
             aria-label="Escanear comida por foto" title="Escanear comida">
             {isAnalyzingImage ? <Loader2 className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
           </button>
@@ -608,7 +609,7 @@ export default function ChatWidget({ initialPrompt, onProfileUpdate }: ChatWidge
           <button
             onClick={imagePreview ? analyzeImage : () => sendMessage(input)}
             disabled={isStreaming || isFreeLimit || isAnalyzingImage || (!imagePreview && !input.trim()) || (!imagePreview && input.length > MAX_CHARS)}
-            className="p-3 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex-shrink-0"
+            className="hover-press p-3 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex-shrink-0"
             aria-label={imagePreview ? 'Analizar imagen' : 'Enviar mensaje'}>
             {isStreaming || isAnalyzingImage ? (
               <Loader2 className="w-5 h-5 animate-spin" />

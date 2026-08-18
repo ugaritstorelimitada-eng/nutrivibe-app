@@ -1,0 +1,259 @@
+/* ============================================================
+   NutriVibe — Premium Sutil Animations
+   Micro-interactions & scroll-triggered reveals
+   ============================================================ */
+
+/* ── Keyframes ─────────────────────────────────────────────── */
+
+/* Subtle float for avatar */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+/* Breathing scale for idle elements */
+@keyframes breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.015); }
+}
+
+/* Soft glow pulse for logo isotipo */
+@keyframes logoGlow {
+  0%, 100% { filter: drop-shadow(0 0 0px rgba(16, 185, 129, 0)); }
+  50% { filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.35)); }
+}
+
+/* Shimmer sweep for premium badges */
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+/* Gradient text shift */
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Slide up for chat messages */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Pulse ring for notifications */
+@keyframes pulseRing {
+  0%   { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+/* Smooth blur-in for modals */
+@keyframes blurIn {
+  from { opacity: 0; backdrop-filter: blur(0px); }
+  to   { opacity: 1; backdrop-filter: blur(12px); }
+}
+
+/* Subtle sparkle for icons */
+@keyframes sparkle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(0.92); }
+}
+
+/* Typewriter cursor blink */
+@keyframes cursorBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* ── Utility animation classes ─────────────────────────────── */
+
+/* Avatar float — applied to the avatar container */
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+/* Avatar breathe — subtle scale pulse */
+.animate-breathe {
+  animation: breathe 3s ease-in-out infinite;
+}
+
+/* Logo glow — isotipo pulse */
+.animate-logo-glow {
+  animation: logoGlow 3s ease-in-out infinite;
+}
+
+/* Shimmer premium badge */
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2.5s linear infinite;
+}
+
+/* Gradient text animated */
+.animate-gradient-text {
+  background-size: 200% 200%;
+  animation: gradientShift 4s ease infinite;
+}
+
+/* Chat message slide in */
+.animate-slide-up {
+  animation: slideUp 0.3s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+
+/* Pulse ring notification dot */
+.animate-pulse-ring::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: inherit;
+  animation: pulseRing 1.5s ease-out infinite;
+}
+
+/* Blur-in modal backdrop */
+.animate-blur-in {
+  animation: blurIn 0.25s ease-out forwards;
+}
+
+/* Icon sparkle on hover */
+.animate-sparkle {
+  animation: sparkle 1.5s ease-in-out infinite;
+}
+
+/* Stagger children — use with staggerContainer */
+.stagger-item {
+  opacity: 0;
+  transform: translateY(16px);
+}
+
+/* ── Hover micro-interactions ─────────────────────────────── */
+
+/* Card hover: subtle lift + shadow */
+.hover-lift {
+  transition: transform 0.25s cubic-bezier(0.25, 0.1, 0.25, 1),
+              box-shadow 0.25s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.hover-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px -8px rgba(99, 102, 241, 0.18),
+              0 4px 16px -4px rgba(99, 102, 241, 0.1);
+}
+
+/* Button hover: subtle press */
+.hover-press {
+  transition: transform 0.15s cubic-bezier(0.25, 0.1, 0.25, 1),
+              box-shadow 0.15s ease;
+}
+.hover-press:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.15);
+}
+.hover-press:active {
+  transform: translateY(0px) scale(0.98);
+  box-shadow: 0 2px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Icon hover: gentle scale + color */
+.hover-icon {
+  transition: transform 0.2s cubic-bezier(0.25, 0.1, 0.25, 1),
+              color 0.2s ease;
+}
+.hover-icon:hover {
+  transform: scale(1.15);
+}
+
+/* Input focus glow */
+.focus-glow:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2),
+              0 0 0 1px rgba(99, 102, 241, 0.15);
+  border-color: rgba(99, 102, 241, 0.5);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+/* Nav link underline slide */
+.nav-link {
+  position: relative;
+  text-decoration: none;
+}
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  right: 50%;
+  height: 2px;
+  background: linear-gradient(90deg, #10b981, #8b5cf6);
+  border-radius: 2px;
+  transition: left 0.25s cubic-bezier(0.25, 0.1, 0.25, 1),
+              right 0.25s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.nav-link:hover::after,
+.nav-link.active::after {
+  left: 0;
+  right: 0;
+}
+
+/* Color picker swatch hover */
+.swatch-hover {
+  transition: transform 0.15s cubic-bezier(0.25, 0.1, 0.25, 1),
+              box-shadow 0.15s ease;
+}
+.swatch-hover:hover {
+  transform: scale(1.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Progress bar fill animation */
+@keyframes progressFill {
+  from { width: 0%; }
+}
+.animate-progress {
+  animation: progressFill 1s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+
+/* Typing indicator dots */
+@keyframes typingDot {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-4px); opacity: 1; }
+}
+.typing-dot:nth-child(1) { animation: typingDot 1.2s ease-in-out infinite 0s; }
+.typing-dot:nth-child(2) { animation: typingDot 1.2s ease-in-out infinite 0.2s; }
+.typing-dot:nth-child(3) { animation: typingDot 1.2s ease-in-out infinite 0.4s; }
+
+/* Scroll indicator bounce */
+@keyframes scrollBounce {
+  0%, 100% { transform: translateY(0); opacity: 0.6; }
+  50% { transform: translateY(6px); opacity: 1; }
+}
+.animate-scroll-bounce {
+  animation: scrollBounce 2s ease-in-out infinite;
+}
+
+/* Premium divider shimmer */
+@keyframes dividerShimmer {
+  0% { background-position: -100% 0; }
+  100% { background-position: 200% 0; }
+}
+.animate-divider-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(139, 92, 246, 0.15) 25%,
+    rgba(16, 185, 129, 0.15) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: dividerShimmer 4s ease-in-out infinite;
+}
+
+/* Selection color */
+::selection {
+  background: rgba(99, 102, 241, 0.2);
+  color: inherit;
+}
